@@ -1,0 +1,177 @@
+export const MOCK_STATS = {
+  totalOrders: 1248,
+  activeTrips: 42,
+  completedTrips: 843,
+  delayedTrips: 3,
+  availableDrivers: 15,
+  availableVehicles: 12,
+  pendingPayments: "$24,500",
+  fuelExpenses: "$12,340",
+};
+
+export const MOCK_ORDERS = [
+  {
+    id: "ORD-001",
+    customer: "Acme Corp",
+    driver: "John Doe",
+    vehicle: "Truck A-1",
+    pickup: "New York, NY",
+    destination: "Boston, MA",
+    status: "In Transit",
+    deliveryDate: "2026-07-16",
+    weight: "2,000 lbs",
+    cargo: "Electronics",
+  },
+  {
+    id: "ORD-002",
+    customer: "Globex Inc",
+    driver: "Jane Smith",
+    vehicle: "Van B-2",
+    pickup: "Chicago, IL",
+    destination: "Detroit, MI",
+    status: "Pending",
+    deliveryDate: "2026-07-18",
+    weight: "500 lbs",
+    cargo: "Medical Supplies",
+  },
+  {
+    id: "ORD-003",
+    customer: "Stark Industries",
+    driver: "Mike Johnson",
+    vehicle: "Truck C-3",
+    pickup: "Los Angeles, CA",
+    destination: "San Francisco, CA",
+    status: "Delivered",
+    deliveryDate: "2026-07-14",
+    weight: "4,500 lbs",
+    cargo: "Machinery",
+  },
+  {
+    id: "ORD-004",
+    customer: "Wayne Enterprises",
+    driver: "Bruce Wayne",
+    vehicle: "Truck D-4",
+    pickup: "Gotham City, NJ",
+    destination: "Metropolis, NY",
+    status: "Delayed",
+    deliveryDate: "2026-07-15",
+    weight: "1,200 lbs",
+    cargo: "Automotive Parts",
+  },
+];
+
+export const MOCK_DRIVERS = [
+  {
+    id: "DRV-01",
+    name: "John Doe",
+    email: "john.doe@example.com",
+    phone: "+1 (555) 123-4567",
+    status: "Busy",
+    rating: 4.8,
+    tripsCompleted: 142,
+  },
+  {
+    id: "DRV-02",
+    name: "Jane Smith",
+    email: "jane.smith@example.com",
+    phone: "+1 (555) 987-6543",
+    status: "Available",
+    rating: 4.9,
+    tripsCompleted: 210,
+  },
+  {
+    id: "DRV-03",
+    name: "Mike Johnson",
+    email: "mike.j@example.com",
+    phone: "+1 (555) 456-7890",
+    status: "Offline",
+    rating: 4.5,
+    tripsCompleted: 89,
+  },
+];
+
+export const MOCK_VEHICLES = [
+  {
+    id: "VEH-01",
+    model: "Freightliner Cascadia",
+    plate: "ABC-1234",
+    type: "Heavy Truck",
+    status: "Assigned",
+    lastMaintenance: "2026-06-15",
+    mileage: "125,000 miles",
+  },
+  {
+    id: "VEH-02",
+    model: "Ford Transit",
+    plate: "XYZ-9876",
+    type: "Cargo Van",
+    status: "Available",
+    lastMaintenance: "2026-07-01",
+    mileage: "45,000 miles",
+  },
+  {
+    id: "VEH-03",
+    model: "Volvo VNL",
+    plate: "LMN-4567",
+    type: "Heavy Truck",
+    status: "Maintenance",
+    lastMaintenance: "2026-07-10",
+    mileage: "210,000 miles",
+  },
+];
+
+export const MOCK_CUSTOMERS = [
+  {
+    id: "CUST-01",
+    name: "Acme Corp",
+    contact: "Alice Williams",
+    email: "alice@acmecorp.com",
+    totalOrders: 45,
+    pendingPayments: "$4,500",
+    status: "Active",
+  },
+  {
+    id: "CUST-02",
+    name: "Globex Inc",
+    contact: "Bob Brown",
+    email: "bob@globex.com",
+    totalOrders: 12,
+    pendingPayments: "$0",
+    status: "Active",
+  },
+];
+
+export const MOCK_TRIPS = [
+  {
+    id: "TRP-1001",
+    orderId: "ORD-001",
+    driver: "John Doe",
+    vehicle: "Truck A-1",
+    origin: "New York, NY",
+    destination: "Boston, MA",
+    status: "In Transit",
+    progress: 65,
+    eta: "2 hours",
+  },
+  {
+    id: "TRP-1002",
+    orderId: "ORD-004",
+    driver: "Bruce Wayne",
+    vehicle: "Truck D-4",
+    origin: "Gotham City, NJ",
+    destination: "Metropolis, NY",
+    status: "Delayed",
+    progress: 30,
+    eta: "Unknown",
+  },
+];
+
+export const MOCK_CHART_DATA = [
+  { name: "Jan", revenue: 4000, expenses: 2400 },
+  { name: "Feb", revenue: 3000, expenses: 1398 },
+  { name: "Mar", revenue: 2000, expenses: 9800 },
+  { name: "Apr", revenue: 2780, expenses: 3908 },
+  { name: "May", revenue: 1890, expenses: 4800 },
+  { name: "Jun", revenue: 2390, expenses: 3800 },
+  { name: "Jul", revenue: 3490, expenses: 4300 },
+];
