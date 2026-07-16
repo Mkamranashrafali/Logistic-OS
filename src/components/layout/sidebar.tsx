@@ -12,8 +12,11 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  Receipt,
+  FileText as FileIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -22,6 +25,8 @@ const navigation = [
   { name: "Drivers", href: "/drivers", icon: Users },
   { name: "Vehicles", href: "/vehicles", icon: Truck },
   { name: "Customers", href: "/customers", icon: Building2 },
+  { name: "Expenses", href: "/expenses", icon: Receipt },
+  { name: "Documents", href: "/documents", icon: FileIcon },
   { name: "Reports", href: "/reports", icon: BarChart3 },
 ];
 
@@ -32,6 +37,7 @@ const secondaryNavigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { logout } = useAuth();
 
   return (
     <div className="flex h-full w-64 flex-col border-r bg-sidebar px-4 py-6">
@@ -79,7 +85,7 @@ export function Sidebar() {
               onClick={(e) => {
                 if (item.action === "logout") {
                   e.preventDefault();
-                  // TODO: implement logout
+                  logout();
                 }
               }}
             >

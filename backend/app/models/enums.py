@@ -1,0 +1,27 @@
+from enum import Enum
+
+class OrderStatus(str, Enum):
+    PENDING = "pending"
+    ASSIGNED = "assigned"
+    IN_TRANSIT = "in_transit"
+    DELIVERED = "delivered"
+    CANCELLED = "cancelled"
+
+class TripStatus(str, Enum):
+    CREATED = "created"
+    STARTED = "started"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+class DriverStatus(str, Enum):
+    AVAILABLE = "available"
+    ASSIGNED = "assigned"
+    ON_TRIP = "on_trip"
+    INACTIVE = "inactive"
+
+class VehicleStatus(str, Enum):
+    AVAILABLE = "available"
+    ASSIGNED = "assigned"
+    ON_TRIP = "on_trip"
+    MAINTENANCE = "maintenance"
