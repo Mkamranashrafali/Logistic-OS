@@ -85,7 +85,11 @@ export default function CreateOrderPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Customer</label>
                 <Select value={customerId} onValueChange={(val) => setCustomerId(val || "")}>
-                  <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select customer">
+                      {customerId ? customers.find((c: any) => c.id === customerId)?.name : "Select customer"}
+                    </SelectValue>
+                  </SelectTrigger>
                   <SelectContent>
                     {customers.map(c => (
                       <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>

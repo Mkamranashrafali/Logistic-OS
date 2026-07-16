@@ -71,5 +71,27 @@ def delete_trip(
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Not authorized to access this resource")
         
+    from app.models.order import Order
+    orders = db.query(Order).filter(Order.trip_id == id).all()
+    
     trip_service.remove(db, id=id)
+    
+    # Free resources
+    for order in orders:
+        if order.assigned_driver_id:
+            from app.models.driver import Driver
+            driver = db.query(Driver).filter(Driver.id == order.assigned_driver_id).first()
+            if driver:
+                driver.availability_status = "available"
+                if driver.current_trip_id == id:
+                    driver.current_trip_id = None
+                    
+        if order.assigned_vehicle_id:
+            from app.models.vehicle import Vehicle
+            vehicle = db.query(Vehicle).filter(Vehicle.id == order.assigned_vehicle_id).first()
+            if vehicle:
+                vehicle.availability_status = "available"
+                
+    db.commit()
+    
     return success_response(message="Trip deleted successfully")

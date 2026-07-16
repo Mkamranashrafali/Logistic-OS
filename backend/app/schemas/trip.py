@@ -28,6 +28,10 @@ class TripResponse(TripBase):
     end_time: Optional[datetime]
     current_location: Optional[str]
     distance_travelled: float
+    total_cost: float
+    revenue: float
+    net_profit: float
+    profit_margin: float
     created_at: datetime
     updated_at: datetime
     

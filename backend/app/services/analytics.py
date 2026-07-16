@@ -6,7 +6,6 @@ from typing import Optional, Dict, Any, List
 from app.models.order import Order
 from app.models.trip import Trip
 from app.models.expense import Expense
-from app.models.fuel import FuelEntry
 from app.models.driver import Driver
 from app.models.vehicle import Vehicle
 from app.models.customer import Customer
@@ -99,14 +98,6 @@ class AnalyticsService:
         rev_q = AnalyticsService._apply_date_filter(rev_q, Order.created_at, start_date, end_date)
         revenues = rev_q.group_by(func.date(Order.created_at)).order_by(func.date(Order.created_at)).all()
 
-        # Fuel by day
-        fuel_q = db.query(
-            func.date(FuelEntry.date).label('date'),
-            func.sum(FuelEntry.amount).label('fuel_cost')
-        ).filter(FuelEntry.company_id == company_id)
-        fuel_q = AnalyticsService._apply_date_filter(fuel_q, FuelEntry.date, start_date, end_date)
-        fuels = fuel_q.group_by(func.date(FuelEntry.date)).all()
-
         # Expenses by day
         # Join trip to get company_id
         exp_q = db.query(
@@ -121,12 +112,6 @@ class AnalyticsService:
         for r in revenues:
             trend_dict[str(r.date)] = {"date": str(r.date), "revenue": float(r.revenue or 0), "expenses": 0.0}
         
-        for f in fuels:
-            d = str(f.date)
-            if d not in trend_dict:
-                trend_dict[d] = {"date": d, "revenue": 0.0, "expenses": 0.0}
-            trend_dict[d]["expenses"] += float(f.fuel_cost or 0)
-            
         for e in expenses:
             d = str(e.date)
             if d not in trend_dict:
@@ -170,46 +155,31 @@ class AnalyticsService:
 
     @staticmethod
     def get_trip_analytics(db: Session, company_id: str, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
-        # Average Delivery Time, Cost Per Trip, Profit Per Trip
+        trip_data_q = db.query(
+            func.count(Trip.id).label('total_trips'),
+            func.avg(Trip.total_cost).label('avg_cost'),
+            func.avg(Trip.net_profit).label('avg_profit'),
+            func.sum(Trip.total_cost).label('total_cost'),
+            func.sum(Trip.revenue).label('total_revenue')
+        ).filter(Trip.company_id == company_id, Trip.is_deleted == False)
+        trip_data_q = AnalyticsService._apply_date_filter(trip_data_q, Trip.created_at, start_date, end_date)
+        agg = trip_data_q.first()
         
-        # We need orders that have a trip assigned
-        trip_orders = db.query(
-            Trip.id,
-            func.sum(Order.amount).label('revenue'),
-            func.max(Order.expected_delivery_date).label('expected'),
-            func.max(Trip.end_time).label('actual_end')
-        ).outerjoin(Order, Order.trip_id == Trip.id).filter(Trip.company_id == company_id, Trip.is_deleted == False)
-        trip_orders = AnalyticsService._apply_date_filter(trip_orders, Trip.created_at, start_date, end_date)
-        trip_data = trip_orders.group_by(Trip.id).all()
-        
-        trip_expenses = db.query(
-            Expense.trip_id,
-            func.sum(Expense.amount).label('cost')
-        ).join(Trip, Expense.trip_id == Trip.id).filter(Trip.company_id == company_id, Expense.is_deleted == False)
-        trip_expenses = AnalyticsService._apply_date_filter(trip_expenses, Expense.created_at, start_date, end_date)
-        expense_data = trip_expenses.group_by(Expense.trip_id).all()
-        
-        expense_map = {e.trip_id: e.cost for e in expense_data}
-        
-        total_trips = len(trip_data)
-        total_cost = 0.0
-        total_revenue = 0.0
+        # Determine delayed trips
         delayed_trips = 0
-        
-        for t in trip_data:
-            cost = expense_map.get(t.id, 0.0)
-            total_cost += cost
-            total_revenue += (t.revenue or 0.0)
-            if t.expected and t.actual_end and t.actual_end > t.expected:
+        trips = db.query(Trip.id, Trip.end_time, Order.expected_delivery_date)\
+            .join(Order, Order.trip_id == Trip.id)\
+            .filter(Trip.company_id == company_id, Trip.is_deleted == False).all()
+            
+        for t in trips:
+            if t.expected_delivery_date and t.end_time and t.end_time > t.expected_delivery_date:
                 delayed_trips += 1
                 
-        profit = total_revenue - total_cost
-                
         return {
-            "total_trips": total_trips,
+            "total_trips": agg.total_trips or 0,
             "delayed_trips": delayed_trips,
-            "average_cost_per_trip": round(total_cost / total_trips, 2) if total_trips else 0.0,
-            "average_profit_per_trip": round(profit / total_trips, 2) if total_trips else 0.0,
+            "average_cost_per_trip": round(float(agg.avg_cost or 0), 2),
+            "average_profit_per_trip": round(float(agg.avg_profit or 0), 2),
         }
 
     @staticmethod
@@ -218,16 +188,13 @@ class AnalyticsService:
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         month_start = today_start.replace(day=1)
 
-        base_q = db.query(FuelEntry).filter(FuelEntry.company_id == company_id)
+        base_q = db.query(Expense).join(Trip, Expense.trip_id == Trip.id).filter(Trip.company_id == company_id, Expense.category == 'Fuel')
         
-        today_q = base_q.filter(FuelEntry.date >= today_start)
-        month_q = base_q.filter(FuelEntry.date >= month_start)
-        
-        today_cost = db.query(func.coalesce(func.sum(FuelEntry.amount), 0.0)).filter(FuelEntry.company_id == company_id, FuelEntry.date >= today_start).scalar()
-        month_cost = db.query(func.coalesce(func.sum(FuelEntry.amount), 0.0)).filter(FuelEntry.company_id == company_id, FuelEntry.date >= month_start).scalar()
+        today_cost = base_q.filter(Expense.date >= today_start).with_entities(func.coalesce(func.sum(Expense.amount), 0.0)).scalar()
+        month_cost = base_q.filter(Expense.date >= month_start).with_entities(func.coalesce(func.sum(Expense.amount), 0.0)).scalar()
 
-        fuel_entries = db.query(FuelEntry.trip_id, FuelEntry.amount).filter(FuelEntry.company_id == company_id)
-        fuel_entries = AnalyticsService._apply_date_filter(fuel_entries, FuelEntry.date, start_date, end_date).all()
+        fuel_entries = base_q.with_entities(Expense.trip_id, Expense.amount)
+        fuel_entries = AnalyticsService._apply_date_filter(fuel_entries, Expense.date, start_date, end_date).all()
         
         trip_vehicles = db.query(Order.trip_id, Vehicle.plate_number)\
             .join(Vehicle, Order.assigned_vehicle_id == Vehicle.id)\
@@ -246,14 +213,17 @@ class AnalyticsService:
 
         by_driver = db.query(
             Driver.name,
-            func.sum(FuelEntry.amount).label('total_cost')
-        ).join(FuelEntry, FuelEntry.driver_id == Driver.id).filter(Driver.company_id == company_id)
-        by_driver = AnalyticsService._apply_date_filter(by_driver, FuelEntry.date, start_date, end_date)
+            func.sum(Expense.amount).label('total_cost')
+        ).join(Order, Order.assigned_driver_id == Driver.id)\
+         .join(Expense, Expense.trip_id == Order.trip_id)\
+         .filter(Driver.company_id == company_id, Expense.category == 'Fuel')
+         
+        by_driver = AnalyticsService._apply_date_filter(by_driver, Expense.date, start_date, end_date)
         by_driver_res = by_driver.group_by(Driver.name).all()
 
         return {
-            "today_cost": float(today_cost),
-            "month_cost": float(month_cost),
+            "today_cost": float(today_cost or 0.0),
+            "month_cost": float(month_cost or 0.0),
             "by_vehicle": [{"vehicle": r["vehicle"], "cost": float(r["total_cost"])} for r in by_vehicle_res],
             "by_driver": [{"driver": r.name, "cost": float(r.total_cost or 0)} for r in by_driver_res]
         }
@@ -309,25 +279,19 @@ class AnalyticsService:
         rev_q = AnalyticsService._apply_date_filter(rev_q, Order.created_at, start_date, end_date)
         revenue = float(rev_q.scalar())
 
-        # Total Fuel Cost
-        fuel_q = db.query(func.coalesce(func.sum(FuelEntry.amount), 0.0)).filter(FuelEntry.company_id == company_id)
-        fuel_q = AnalyticsService._apply_date_filter(fuel_q, FuelEntry.date, start_date, end_date)
-        fuel_cost = float(fuel_q.scalar())
-
         # Total Other Expenses
         exp_q = db.query(func.coalesce(func.sum(Expense.amount), 0.0)).join(Trip, Expense.trip_id == Trip.id).filter(Trip.company_id == company_id, Expense.is_deleted == False)
         exp_q = AnalyticsService._apply_date_filter(exp_q, Expense.created_at, start_date, end_date)
-        other_expenses = float(exp_q.scalar())
+        total_expenses = float(exp_q.scalar())
 
-        total_expenses = fuel_cost + other_expenses
         profit = revenue - total_expenses
         margin = (profit / revenue * 100) if revenue > 0 else 0.0
 
         return {
             "revenue": revenue,
             "expenses": total_expenses,
-            "fuel_cost": fuel_cost,
-            "other_expenses": other_expenses,
+            "fuel_cost": 0.0,
+            "other_expenses": total_expenses,
             "profit": profit,
             "profit_margin_pct": round(margin, 2)
         }

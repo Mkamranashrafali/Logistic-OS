@@ -90,7 +90,9 @@ export function AssignmentModal({ orderId, open, onOpenChange, onAssigned }: Ass
               <label className="text-sm font-medium">Driver</label>
               <Select value={selectedDriver} onValueChange={setSelectedDriver}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select driver" />
+                  <SelectValue placeholder="Select driver">
+                    {selectedDriver ? drivers.find((d: any) => d.id === selectedDriver)?.name : "Select driver"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {drivers.map((d: any) => (
@@ -116,7 +118,9 @@ export function AssignmentModal({ orderId, open, onOpenChange, onAssigned }: Ass
               <label className="text-sm font-medium">Vehicle</label>
               <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select vehicle" />
+                  <SelectValue placeholder="Select vehicle">
+                    {selectedVehicle ? vehicles.find((v: any) => v.id === selectedVehicle)?.plate_number : "Select vehicle"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {vehicles.map((v: any) => (

@@ -14,17 +14,15 @@ export default function DriverDashboardPage() {
   const [trips, setTrips] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+
+  // Expense State
+  const [isExpenseOpen, setIsExpenseOpen] = useState(false);
+  const [expenseCategory, setExpenseCategory] = useState("Toll");
+  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseNotes, setExpenseNotes] = useState("");
   
-  // Fuel State
-  const [isFuelOpen, setIsFuelOpen] = useState(false);
-  const [fuelStation, setFuelStation] = useState("");
-  const [fuelAmount, setFuelAmount] = useState("");
-  const [fuelQuantity, setFuelQuantity] = useState("");
-  const [fuelOdometer, setFuelOdometer] = useState("");
-  
-  // Proof State
-  const [isProofOpen, setIsProofOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const EXPENSE_CATEGORIES = ["Fuel", "Toll", "Parking", "Loading", "Unloading", "Repair", "Food", "Hotel", "Fine", "Delivery Proof", "Other"];
 
   useEffect(() => {
     fetchData();
@@ -54,36 +52,23 @@ export default function DriverDashboardPage() {
     }
   };
 
-  const handleFuelSubmit = async (e: React.FormEvent) => {
+
+
+  const handleExpenseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeTrip) return;
     try {
-      await api.post('/driver/fuel', {
+      await api.post('/driver/expenses', {
         trip_id: activeTrip.id,
-        station: fuelStation,
-        amount: parseFloat(fuelAmount),
-        quantity: parseFloat(fuelQuantity),
-        odometer: parseFloat(fuelOdometer),
+        category: expenseCategory,
+        amount: expenseCategory === "Delivery Proof" ? 0.0 : parseFloat(expenseAmount),
+        notes: expenseNotes,
       });
-      setIsFuelOpen(false);
-      setFuelStation(""); setFuelAmount(""); setFuelQuantity(""); setFuelOdometer("");
+      setIsExpenseOpen(false);
+      setExpenseAmount(""); setExpenseNotes(""); setExpenseCategory("Toll");
       fetchData();
     } catch (err: any) {
-      alert(err.message || "Failed to add fuel entry");
-    }
-  };
-
-  const handleProofSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUploading(true);
-    try {
-      await api.post('/driver/proofs', {});
-      setIsProofOpen(false);
-      fetchData();
-    } catch (err: any) {
-      alert(err.message || "Failed to upload proof");
-    } finally {
-      setIsUploading(false);
+      alert(err.message || "Failed to add expense");
     }
   };
 
@@ -159,57 +144,53 @@ export default function DriverDashboardPage() {
                 {/* Additional Actions */}
                 {activeTrip.trip_status === 'started' || activeTrip.trip_status === 'PAUSED' ? (
                   <div className="pt-4 border-t flex flex-wrap gap-2">
-                    <Dialog open={isFuelOpen} onOpenChange={setIsFuelOpen}>
+                    <Dialog open={isExpenseOpen} onOpenChange={setIsExpenseOpen}>
                       <DialogTrigger className={buttonVariants({ variant: "outline" })}>
-                        Add Fuel Entry
+                        Add Expense
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Log Fuel</DialogTitle>
+                          <DialogTitle>Log Expense</DialogTitle>
                         </DialogHeader>
-                        <form onSubmit={handleFuelSubmit} className="space-y-4">
+                        <form onSubmit={handleExpenseSubmit} className="space-y-4">
                           <div className="grid gap-2">
-                            <Label>Station</Label>
-                            <Input required value={fuelStation} onChange={e => setFuelStation(e.target.value)} />
+                            <Label>Category</Label>
+                            <select 
+                              className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                              value={expenseCategory} 
+                              onChange={e => setExpenseCategory(e.target.value)}
+                            >
+                              {EXPENSE_CATEGORIES.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                              ))}
+                            </select>
                           </div>
-                          <div className="grid grid-cols-2 gap-4">
+                          
+                          {expenseCategory !== "Delivery Proof" && (
                             <div className="grid gap-2">
                               <Label>Amount ($)</Label>
-                              <Input required type="number" step="0.01" value={fuelAmount} onChange={e => setFuelAmount(e.target.value)} />
+                              <Input required type="number" step="0.01" value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)} />
                             </div>
-                            <div className="grid gap-2">
-                              <Label>Quantity (L)</Label>
-                              <Input required type="number" step="0.01" value={fuelQuantity} onChange={e => setFuelQuantity(e.target.value)} />
-                            </div>
-                          </div>
-                          <div className="grid gap-2">
-                            <Label>Odometer</Label>
-                            <Input required type="number" value={fuelOdometer} onChange={e => setFuelOdometer(e.target.value)} />
-                          </div>
-                          <Button type="submit" className="w-full">Save Entry</Button>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
+                          )}
 
-                    <Dialog open={isProofOpen} onOpenChange={setIsProofOpen}>
-                      <DialogTrigger className={buttonVariants({ variant: "outline" })}>
-                        Upload Proof
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Upload Receipt/Proof</DialogTitle>
-                        </DialogHeader>
-                        <form onSubmit={handleProofSubmit} className="space-y-4">
                           <div className="grid gap-2">
-                            <Label>Select File</Label>
-                            <Input type="file" required />
+                            <Label>Notes / Description</Label>
+                            <Input value={expenseNotes} onChange={e => setExpenseNotes(e.target.value)} />
                           </div>
-                          <Button type="submit" className="w-full" disabled={isUploading}>
-                            {isUploading ? "Uploading..." : "Upload"}
+
+                          <div className="grid gap-2">
+                            <Label>{expenseCategory === "Delivery Proof" ? "Signed POD / Image" : "Receipt Image"}</Label>
+                            <Input type="file" />
+                          </div>
+
+                          <Button type="submit" className="w-full">
+                            {expenseCategory === "Delivery Proof" ? "Upload Proof" : "Save Expense"}
                           </Button>
                         </form>
                       </DialogContent>
                     </Dialog>
+
+
                   </div>
                 ) : null}
               </div>

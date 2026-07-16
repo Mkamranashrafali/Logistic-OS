@@ -58,6 +58,11 @@ def update_order(
         raise HTTPException(status_code=403, detail="Not authorized to access this resource")
         
     item = order_service.update(db, id=id, obj_in=obj_in)
+    
+    if getattr(item, 'trip_id', None):
+        from app.services.financial_service import TripFinancialService
+        TripFinancialService.recalculate_trip_financials(db, item.trip_id)
+
     return success_response(message="Order updated successfully", data=OrderResponse.model_validate(item).model_dump())
 
 @router.delete("/{id}", response_model=dict, summary="Soft delete Order")
@@ -71,5 +76,27 @@ def delete_order(
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Not authorized to access this resource")
         
+    driver_id = item.assigned_driver_id
+    vehicle_id = item.assigned_vehicle_id
+    trip_id = item.trip_id
+
     order_service.remove(db, id=id)
+    
+    # Free resources
+    if driver_id:
+        from app.models.driver import Driver
+        driver = db.query(Driver).filter(Driver.id == driver_id).first()
+        if driver:
+            driver.availability_status = "available"
+            if driver.current_trip_id == trip_id:
+                driver.current_trip_id = None
+                
+    if vehicle_id:
+        from app.models.vehicle import Vehicle
+        vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
+        if vehicle:
+            vehicle.availability_status = "available"
+            
+    db.commit()
+    
     return success_response(message="Order deleted successfully")

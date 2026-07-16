@@ -22,6 +22,12 @@ class Trip(Base, TimestampMixin, SoftDeleteMixin):
     
     distance_travelled = Column(Float, default=0.0)
     delivery_notes = Column(String, nullable=True)
+    
+    # Financials
+    total_cost = Column(Float, default=0.0, nullable=False)
+    revenue = Column(Float, default=0.0, nullable=False)
+    net_profit = Column(Float, default=0.0, nullable=False)
+    profit_margin = Column(Float, default=0.0, nullable=False)
 
     company = relationship("Company", back_populates="trips")
     orders = relationship("Order", back_populates="trip")

@@ -11,7 +11,6 @@ from app.api.dependencies.roles import require_roles
 from app.core.responses import success_response
 from app.services.workflow_service import TripWorkflowService
 from app.schemas.trip import TripResponse
-from app.models.fuel import FuelEntry
 from app.models.activity import TripActivityLog
 from pydantic import BaseModel
 from datetime import datetime, timezone
@@ -25,12 +24,10 @@ class UpdateProgressRequest(BaseModel):
     location: str = None
     notes: str = None
 
-class FuelEntryRequest(BaseModel):
+class ExpenseEntryRequest(BaseModel):
     trip_id: str = None
-    station: str
-    amount: float
-    quantity: float
-    odometer: float
+    category: str
+    amount: float = 0.0
     notes: str = None
     receipt_url: str = None
 
@@ -74,18 +71,64 @@ def get_driver_expenses(
     current_user: User = Depends(require_roles(["driver"]))
 ) -> Any:
     driver = get_current_driver(db, current_user)
-    fuel_entries = db.query(FuelEntry).filter(FuelEntry.driver_id == driver.id).order_by(FuelEntry.date.desc()).all()
     
-    data = [{
-        "id": f.id,
-        "type": "Fuel",
-        "amount": f.amount,
-        "date": f.date.isoformat(),
-        "station": f.station,
-        "notes": f.notes
-    } for f in fuel_entries]
+    data = []
+    
+    # General Expenses
+    # We must find the driver's trips to find their expenses
+    from app.models.expense import Expense
+    from app.models.order import Order
+    trips = db.query(Trip.id).join(Order, Order.trip_id == Trip.id).filter(Order.assigned_driver_id == driver.id).all()
+    trip_ids = [t[0] for t in trips]
+    
+    if trip_ids:
+        expenses = db.query(Expense).filter(Expense.trip_id.in_(trip_ids), Expense.is_deleted == False).all()
+        data.extend([{
+            "id": e.id,
+            "type": e.category,
+            "amount": e.amount,
+            "date": e.date.isoformat(),
+            "station": None,
+            "notes": e.description,
+            "receipt_url": e.receipt_url
+        } for e in expenses])
+        
+    # Sort descending by date
+    data.sort(key=lambda x: x["date"], reverse=True)
     
     return success_response(message="Expenses fetched", data=data)
+
+@router.post("/expenses", summary="Log generic expense")
+def add_driver_expense(
+    payload: ExpenseEntryRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(["driver"]))
+) -> Any:
+    driver = get_current_driver(db, current_user)
+    trip_id = payload.trip_id or driver.current_trip_id
+    if not trip_id:
+        raise HTTPException(status_code=400, detail="An active trip is required to log an expense.")
+        
+    from app.models.expense import Expense
+    expense = Expense(
+        id=str(uuid.uuid4()),
+        trip_id=trip_id,
+        amount=payload.amount,
+        category=payload.category,
+        description=payload.notes,
+        date=datetime.now(timezone.utc),
+        receipt_url=payload.receipt_url
+    )
+    db.add(expense)
+    TripWorkflowService.log_activity(db, trip_id, current_user.company_id, driver.id, "EXPENSE_ADDED", notes=f"{payload.category} expense of ${payload.amount}")
+    
+    db.commit()
+    db.refresh(expense)
+
+    from app.services.financial_service import TripFinancialService
+    TripFinancialService.recalculate_trip_financials(db, trip_id)
+
+    return success_response(message="Expense logged successfully")
 
 
 @router.get("/trips", summary="Get driver's trips")
@@ -175,36 +218,7 @@ def resume_trip(
     trip = TripWorkflowService.resume_trip(db=db, trip_id=id, company_id=current_user.company_id)
     return success_response(message="Trip resumed successfully", data=TripResponse.model_validate(trip).model_dump())
 
-@router.post("/fuel", summary="Log fuel entry")
-def add_fuel_entry(
-    payload: FuelEntryRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(["driver"]))
-) -> Any:
-    driver = get_current_driver(db, current_user)
-    
-    fuel = FuelEntry(
-        id=str(uuid.uuid4()),
-        company_id=current_user.company_id,
-        driver_id=driver.id,
-        trip_id=payload.trip_id or driver.current_trip_id,
-        date=datetime.now(timezone.utc),
-        station=payload.station,
-        amount=payload.amount,
-        quantity=payload.quantity,
-        odometer=payload.odometer,
-        notes=payload.notes,
-        receipt_url=payload.receipt_url
-    )
-    db.add(fuel)
-    
-    # Log activity if related to a trip
-    if fuel.trip_id:
-        TripWorkflowService.log_activity(db, fuel.trip_id, current_user.company_id, driver.id, "FUEL_ADDED", notes=f"{payload.quantity}L at {payload.station}")
-        
-    db.commit()
-    db.refresh(fuel)
-    return success_response(message="Fuel logged successfully")
+
 
 @router.get("/activities", summary="Get recent activities")
 def get_activities(
@@ -233,18 +247,6 @@ def get_activity_alias(
     current_user: User = Depends(require_roles(["driver"]))
 ) -> Any:
     return get_activities(db=db, current_user=current_user)
-
-@router.post("/proofs", summary="Upload delivery proof or receipt")
-def upload_proof(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles(["driver"]))
-) -> Any:
-    # Since Supabase JS is not configured for storage yet, mock it out.
-    driver = get_current_driver(db, current_user)
-    if driver.current_trip_id:
-        TripWorkflowService.log_activity(db, driver.current_trip_id, current_user.company_id, driver.id, "RECEIPT_UPLOADED", notes="Receipt uploaded to mocked storage")
-        
-    return success_response(message="Receipt uploaded successfully", data={"url": "https://fake-supabase-url.com/receipts/fake-receipt.png"})
 
 @router.put("/profile", summary="Update Driver Profile")
 def update_profile(
