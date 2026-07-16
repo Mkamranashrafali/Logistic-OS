@@ -45,13 +45,12 @@ app.include_router(expenses.router, prefix=f"{settings.API_V1_STR}/expenses", ta
 app.include_router(documents.router, prefix=f"{settings.API_V1_STR}/documents", tags=["Documents"])
 
 # Workflow Routers
-from app.api.routers import admin_workflow, driver_workflow, dashboard
+from app.api.routers import admin_workflow, driver_workflow, dashboard, analytics
 app.include_router(dashboard.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["Dashboard"])
 app.include_router(admin_workflow.router, prefix=f"{settings.API_V1_STR}/admin", tags=["Admin Workflow"])
 app.include_router(driver_workflow.router, prefix=f"{settings.API_V1_STR}/driver", tags=["Driver Workflow"])
+app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/analytics", tags=["Analytics"])
 
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
-
-

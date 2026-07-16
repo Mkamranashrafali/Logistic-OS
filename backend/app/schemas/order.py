@@ -7,6 +7,7 @@ class OrderBase(BaseModel):
     pickup_location: Optional[str] = None
     delivery_location: Optional[str] = None
     expected_delivery_date: Optional[datetime] = None
+    amount: Optional[float] = 0.0
 
 class OrderCreate(OrderBase):
     pass
@@ -21,6 +22,7 @@ class OrderUpdate(BaseModel):
     pickup_location: Optional[str] = None
     delivery_location: Optional[str] = None
     expected_delivery_date: Optional[datetime] = None
+    amount: Optional[float] = None
 
 class OrderResponse(OrderBase):
     id: str

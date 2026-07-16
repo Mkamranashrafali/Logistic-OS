@@ -12,6 +12,8 @@ from app.models.driver import Driver
 from app.models.vehicle import Vehicle
 from app.models.enums import TripStatus, DriverStatus, OrderStatus
 
+from app.services.analytics import analytics_service
+
 router = APIRouter()
 
 @router.get("/stats", summary="Get Dashboard Statistics")
@@ -21,10 +23,7 @@ def get_dashboard_stats(
 ) -> Any:
     company_id = current_user.company_id
     
-    total_orders = db.query(Order).filter(Order.company_id == company_id, Order.is_deleted == False).count()
-    active_trips = db.query(Trip).filter(Trip.company_id == company_id, Trip.trip_status == TripStatus.STARTED.value, Trip.is_deleted == False).count()
-    available_drivers = db.query(Driver).filter(Driver.company_id == company_id, Driver.availability_status == DriverStatus.AVAILABLE.value, Driver.is_deleted == False).count()
-    total_vehicles = db.query(Vehicle).filter(Vehicle.company_id == company_id, Vehicle.is_deleted == False).count()
+    kpis = analytics_service.get_dashboard_kpis(db, company_id)
     
     recent_orders = db.query(Order).filter(
         Order.company_id == company_id, 
@@ -39,15 +38,8 @@ def get_dashboard_stats(
         }
         for o in recent_orders
     ]
-    
-    # Revenue mock (since we don't have a payments table yet)
-    revenue = 0.0
 
     return success_response(message="Stats fetched", data={
-        "totalOrders": total_orders,
-        "activeTrips": active_trips,
-        "availableDrivers": available_drivers,
-        "totalVehicles": total_vehicles,
-        "revenue": revenue,
+        **kpis,
         "recentActivities": recent_activities
     })

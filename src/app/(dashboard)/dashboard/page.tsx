@@ -8,7 +8,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatisticsCard } from "@/components/dashboard/statistics-card";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
 } from "recharts";
@@ -27,37 +26,16 @@ export default function DashboardPage() {
         const statsData = await api.get('/dashboard/stats');
         setStats(statsData);
 
-        // Fetch expenses to build real chart data
-        const expensesData = await api.get('/expenses');
-        const expList = expensesData || [];
+        const revenueTrend = await api.get('/analytics/revenue');
         
-        // Group by month
-        const monthly = {
-          'Jan': { revenue: 0, expenses: 0 },
-          'Feb': { revenue: 0, expenses: 0 },
-          'Mar': { revenue: 0, expenses: 0 },
-          'Apr': { revenue: 0, expenses: 0 },
-          'May': { revenue: 0, expenses: 0 },
-          'Jun': { revenue: 0, expenses: 0 },
-          'Jul': { revenue: 0, expenses: 0 },
-        };
-        
-        expList.forEach((e: any) => {
-          if (!e.date) return;
-          const month = new Date(e.date).toLocaleString('default', { month: 'short' });
-          if (monthly[month as keyof typeof monthly]) {
-            monthly[month as keyof typeof monthly].expenses += parseFloat(e.amount);
-          }
-        });
-
-        const realChartData = Object.keys(monthly).map(k => ({
-          name: k,
-          revenue: monthly[k as keyof typeof monthly].revenue,
-          expenses: monthly[k as keyof typeof monthly].expenses,
+        // Format revenue trend for recharts
+        const formattedChartData = (revenueTrend || []).map((item: any) => ({
+          name: new Date(item.date).toLocaleDateString('default', { month: 'short', day: 'numeric' }),
+          revenue: item.revenue,
+          expenses: item.expenses
         }));
         
-        // Filter to only months up to current to avoid zero-filled future months if possible
-        setChartData(realChartData);
+        setChartData(formattedChartData);
 
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
@@ -88,24 +66,32 @@ export default function DashboardPage() {
         </div>
         <div className="flex gap-2">
           <Link href="/orders/create" className={buttonVariants({ variant: "default" })}><Plus className="mr-2 h-4 w-4" /> New Order</Link>
-          <Button variant="outline">
-            <FileText className="mr-2 h-4 w-4" /> Download Report
-          </Button>
+          <Link href="/reports" className={buttonVariants({ variant: "outline" })}>
+            <FileText className="mr-2 h-4 w-4" /> View Reports
+          </Link>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatisticsCard 
-          title="Total Orders" value={stats?.totalOrders || 0} icon={Package} 
+          title="Revenue (Month)" value={`$${(stats?.revenue?.month || 0).toFixed(2)}`} icon={DollarSign} 
+          description={`Today: $${(stats?.revenue?.today || 0).toFixed(2)} | Week: $${(stats?.revenue?.week || 0).toFixed(2)}`}
         />
         <StatisticsCard 
-          title="Active Trips" value={stats?.activeTrips || 0} icon={Map} 
+          title="Total Orders" value={stats?.orders?.total || 0} icon={Package} 
+          description={`Pending: ${stats?.orders?.pending || 0} | Delivered: ${stats?.orders?.delivered || 0}`}
         />
         <StatisticsCard 
-          title="Available Drivers" value={stats?.availableDrivers || 0} icon={Users} 
+          title="Active Trips" value={stats?.trips?.active || 0} icon={Map} 
+          description={`Completed: ${stats?.trips?.completed || 0} total trips`}
         />
         <StatisticsCard 
-          title="Available Vehicles" value={stats?.totalVehicles || 0} icon={Truck} 
+          title="Available Drivers" value={stats?.drivers?.available || 0} icon={Users} 
+          description={`Total: ${stats?.drivers?.total || 0} | On Trip: ${stats?.drivers?.active || 0}`}
+        />
+        <StatisticsCard 
+          title="Available Vehicles" value={stats?.vehicles?.available || 0} icon={Truck} 
+          description={`Maintenance: ${stats?.vehicles?.maintenance || 0} | On Trip: ${stats?.vehicles?.active || 0}`}
         />
       </div>
 
