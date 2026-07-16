@@ -62,7 +62,7 @@ export function VehicleModal({
       };
 
       if (vehicle) {
-        await api.patch(`/vehicles/${vehicle.id}`, payload);
+        await api.put(`/vehicles/${vehicle.id}`, payload);
       } else {
         await api.post('/vehicles', payload);
       }

@@ -14,6 +14,7 @@ import {
   LogOut,
   Receipt,
   FileText as FileIcon,
+  History as HistoryIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -28,6 +29,7 @@ const navigation = [
   { name: "Expenses", href: "/expenses", icon: Receipt },
   { name: "Documents", href: "/documents", icon: FileIcon },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "History", href: "/history", icon: HistoryIcon },
 ];
 
 const secondaryNavigation = [

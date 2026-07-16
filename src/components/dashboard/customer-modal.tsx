@@ -56,7 +56,7 @@ export function CustomerModal({
 
     try {
       if (customer) {
-        await api.patch(`/customers/${customer.id}`, formData);
+        await api.put(`/customers/${customer.id}`, formData);
       } else {
         await api.post('/customers', formData);
       }

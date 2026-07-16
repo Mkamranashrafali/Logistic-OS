@@ -18,8 +18,8 @@ class BaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             raise HTTPException(status_code=404, detail="Resource not found")
         return obj
 
-    def get_multi(self, db: Session, skip: int = 0, limit: int = 100, company_id: Optional[str] = None) -> List[ModelType]:
-        return self.repository.get_multi(db, skip=skip, limit=limit, company_id=company_id)
+    def get_multi(self, db: Session, skip: int = 0, limit: int = 100, company_id: Optional[str] = None, include_deleted: bool = False) -> List[ModelType]:
+        return self.repository.get_multi(db, skip=skip, limit=limit, company_id=company_id, include_deleted=include_deleted)
 
     def create(self, db: Session, obj_in: CreateSchemaType, company_id: Optional[str] = None) -> ModelType:
         return self.repository.create(db, obj_in=obj_in, company_id=company_id)

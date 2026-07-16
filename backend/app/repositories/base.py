@@ -21,10 +21,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return query.first()
 
     def get_multi(
-        self, db: Session, *, skip: int = 0, limit: int = 100, company_id: Optional[str] = None
+        self, db: Session, *, skip: int = 0, limit: int = 100, company_id: Optional[str] = None, include_deleted: bool = False
     ) -> List[ModelType]:
         query = db.query(self.model)
-        if hasattr(self.model, 'is_deleted'):
+        if hasattr(self.model, 'is_deleted') and not include_deleted:
             query = query.filter(self.model.is_deleted == False)
         if company_id and hasattr(self.model, 'company_id'):
             query = query.filter(self.model.company_id == company_id)

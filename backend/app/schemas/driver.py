@@ -26,5 +26,6 @@ class DriverResponse(DriverBase):
     current_trip_id: Optional[str]
     created_at: datetime
     updated_at: datetime
+    is_deleted: Optional[bool] = False
     
     model_config = ConfigDict(from_attributes=True)

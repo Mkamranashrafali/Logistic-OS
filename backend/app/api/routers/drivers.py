@@ -63,10 +63,11 @@ def create_driver(
 def read_drivers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
+    include_deleted: bool = Query(False),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    items = driver_service.get_multi(db, skip=skip, limit=limit, company_id=current_user.company_id)
+    items = driver_service.get_multi(db, skip=skip, limit=limit, company_id=current_user.company_id, include_deleted=include_deleted)
     data = [DriverResponse.model_validate(item).model_dump() for item in items]
     return success_response(message="Retrieved drivers successfully", data=data)
 
@@ -110,4 +111,15 @@ def delete_driver(
         raise HTTPException(status_code=403, detail="Not authorized to access this resource")
         
     driver_service.remove(db, id=id)
+    
+    # Also soft-delete the associated User account so they can't login
+    if hasattr(item, 'user_id') and item.user_id:
+        user = db.query(User).filter(User.id == item.user_id).first()
+        if user:
+            user.is_active = False
+            if hasattr(user, 'is_deleted'):
+                user.is_deleted = True
+            db.add(user)
+            db.commit()
+            
     return success_response(message="Driver deleted successfully")

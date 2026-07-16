@@ -57,7 +57,7 @@ export function DriverModal({
 
     try {
       if (driver) {
-        await api.patch(`/drivers/${driver.id}`, formData);
+        await api.put(`/drivers/${driver.id}`, formData);
       } else {
         await api.post('/drivers', formData);
       }
@@ -124,6 +124,7 @@ export function DriverModal({
               <SelectContent>
                 <SelectItem value="available">Available</SelectItem>
                 <SelectItem value="on_trip">On Trip</SelectItem>
+                <SelectItem value="on_leave">On Leave / Disabled</SelectItem>
                 <SelectItem value="offline">Offline</SelectItem>
               </SelectContent>
             </Select>
