@@ -23,7 +23,9 @@ class Trip(Base, TimestampMixin, SoftDeleteMixin):
     distance_travelled = Column(Float, default=0.0)
     delivery_notes = Column(String, nullable=True)
     
-    # Financials
+    # Financials (Cached)
+    fuel_cost = Column(Float, default=0.0)
+    other_expenses = Column(Float, default=0.0)
     total_cost = Column(Float, default=0.0, nullable=False)
     revenue = Column(Float, default=0.0, nullable=False)
     net_profit = Column(Float, default=0.0, nullable=False)

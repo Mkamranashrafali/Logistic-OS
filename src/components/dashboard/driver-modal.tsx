@@ -123,6 +123,7 @@ export function DriverModal({
               <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="assigned">Assigned</SelectItem>
                 <SelectItem value="on_trip">On Trip</SelectItem>
                 <SelectItem value="on_leave">On Leave / Disabled</SelectItem>
                 <SelectItem value="offline">Offline</SelectItem>

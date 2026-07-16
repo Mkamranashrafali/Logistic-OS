@@ -19,6 +19,9 @@ def create_expense(
 ) -> Any:
     # Automatically enforce multi-tenancy via current_user.company_id
     item = expense_service.create(db, obj_in=obj_in, company_id=current_user.company_id)
+    if hasattr(item, 'trip_id') and item.trip_id:
+        from app.services.financial_service import TripFinancialService
+        TripFinancialService.recalculate_trip_financials(db, item.trip_id)
     return success_response(message="Expense created successfully", data=ExpenseResponse.model_validate(item).model_dump())
 
 @router.get("/", response_model=dict, summary="Get all expenses")
@@ -58,6 +61,9 @@ def update_expense(
         raise HTTPException(status_code=403, detail="Not authorized to access this resource")
         
     item = expense_service.update(db, id=id, obj_in=obj_in)
+    if hasattr(item, 'trip_id') and item.trip_id:
+        from app.services.financial_service import TripFinancialService
+        TripFinancialService.recalculate_trip_financials(db, item.trip_id)
     return success_response(message="Expense updated successfully", data=ExpenseResponse.model_validate(item).model_dump())
 
 @router.delete("/{id}", response_model=dict, summary="Soft delete Expense")
@@ -71,5 +77,9 @@ def delete_expense(
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Not authorized to access this resource")
         
+    trip_id = getattr(item, 'trip_id', None)
     expense_service.remove(db, id=id)
+    if trip_id:
+        from app.services.financial_service import TripFinancialService
+        TripFinancialService.recalculate_trip_financials(db, trip_id)
     return success_response(message="Expense deleted successfully")

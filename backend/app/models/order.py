@@ -22,7 +22,7 @@ class Order(Base, TimestampMixin, SoftDeleteMixin):
     pickup_location = Column(String, nullable=True)
     delivery_location = Column(String, nullable=True)
     expected_delivery_date = Column(DateTime(timezone=True), nullable=True)
-    amount = Column(Float, default=0.0, nullable=False)
+    deal_price = Column(Float, default=0.0, nullable=False)
 
     company = relationship("Company", back_populates="orders")
     customer = relationship("Customer", back_populates="orders")

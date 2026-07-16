@@ -82,6 +82,14 @@ def delete_order(
 
     order_service.remove(db, id=id)
     
+    # Auto-delete associated trip
+    if trip_id:
+        from app.services import trip_service
+        try:
+            trip_service.remove(db, id=trip_id)
+        except Exception:
+            pass
+            
     # Free resources
     if driver_id:
         from app.models.driver import Driver

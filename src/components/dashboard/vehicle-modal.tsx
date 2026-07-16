@@ -128,6 +128,7 @@ export function VehicleModal({
               <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="assigned">Assigned</SelectItem>
                 <SelectItem value="on_trip">On Trip</SelectItem>
                 <SelectItem value="maintenance">Maintenance</SelectItem>
               </SelectContent>

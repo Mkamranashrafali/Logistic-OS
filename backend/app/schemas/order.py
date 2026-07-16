@@ -2,15 +2,17 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime
 
+from pydantic import Field
+
 class OrderBase(BaseModel):
     customer_id: Optional[str] = None
     pickup_location: Optional[str] = None
     delivery_location: Optional[str] = None
     expected_delivery_date: Optional[datetime] = None
-    amount: Optional[float] = 0.0
+    deal_price: Optional[float] = 0.0
 
 class OrderCreate(OrderBase):
-    pass
+    deal_price: float = Field(..., gt=0, description="Deal price must be greater than zero")
 
 class OrderUpdate(BaseModel):
     customer_id: Optional[str] = None
@@ -22,7 +24,7 @@ class OrderUpdate(BaseModel):
     pickup_location: Optional[str] = None
     delivery_location: Optional[str] = None
     expected_delivery_date: Optional[datetime] = None
-    amount: Optional[float] = None
+    deal_price: Optional[float] = None
 
 class OrderResponse(OrderBase):
     id: str

@@ -83,8 +83,10 @@ export default function TripsPage() {
               <TableHead>Start Time</TableHead>
               <TableHead>End Time</TableHead>
               <TableHead>Distance</TableHead>
-              <TableHead>Revenue</TableHead>
-              <TableHead>Cost</TableHead>
+              <TableHead>Deal Price</TableHead>
+              <TableHead>Fuel Cost</TableHead>
+              <TableHead>Other Exp.</TableHead>
+              <TableHead>Total Cost</TableHead>
               <TableHead>Profit</TableHead>
               <TableHead>Margin</TableHead>
               <TableHead>Status</TableHead>
@@ -94,13 +96,13 @@ export default function TripsPage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={11} className="h-24 text-center">
+                <TableCell colSpan={13} className="h-24 text-center">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
                 </TableCell>
               </TableRow>
             ) : trips.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={13} className="h-24 text-center text-muted-foreground">
                   No trips found.
                 </TableCell>
               </TableRow>
@@ -126,6 +128,8 @@ export default function TripsPage() {
                   <TableCell className="text-sm">{trip.end_time ? new Date(trip.end_time).toLocaleString() : 'N/A'}</TableCell>
                   <TableCell className="text-sm">{trip.distance_travelled ? `${trip.distance_travelled} km` : '0 km'}</TableCell>
                   <TableCell className="text-sm font-medium text-green-600">${(trip.revenue || 0).toFixed(2)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">${(trip.fuel_cost || 0).toFixed(2)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">${(trip.other_expenses || 0).toFixed(2)}</TableCell>
                   <TableCell className="text-sm font-medium text-red-500">${(trip.total_cost || 0).toFixed(2)}</TableCell>
                   <TableCell className="text-sm font-medium">${(trip.net_profit || 0).toFixed(2)}</TableCell>
                   <TableCell className="text-sm">{trip.profit_margin ? `${trip.profit_margin.toFixed(1)}%` : '0%'}</TableCell>

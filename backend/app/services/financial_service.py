@@ -15,33 +15,39 @@ class TripFinancialService:
         if not trip:
             return None
 
-        # 1. Sum Expenses (Excluding Delivery Proof)
-        expense_cost = db.query(func.coalesce(func.sum(Expense.amount), 0.0)).filter(
+        # 1. Fetch Expenses (Exclude Delivery Proof)
+        expenses_query = db.query(Expense).filter(
             Expense.trip_id == trip_id,
             Expense.is_deleted == False,
             Expense.category != 'Delivery Proof'
-        ).scalar() or 0.0
+        ).all()
+        
+        fuel_cost = 0.0
+        other_expenses = 0.0
+        
+        for e in expenses_query:
+            if e.category == 'Fuel':
+                fuel_cost += float(e.amount)
+            else:
+                other_expenses += float(e.amount)
 
-        total_cost = float(expense_cost)
+        # 2. Total Trip Cost
+        total_cost = fuel_cost + other_expenses
 
         # 3. Sum Orders (Revenue)
-        revenue = db.query(func.coalesce(func.sum(Order.amount), 0.0)).filter(
+        revenue = db.query(func.coalesce(func.sum(Order.deal_price), 0.0)).filter(
             Order.trip_id == trip_id,
             Order.is_deleted == False
         ).scalar() or 0.0
-        
         revenue = float(revenue)
 
-        # 4. Calculate Profit
+        # 4. Profit & Margin
         net_profit = revenue - total_cost
-        
-        # 5. Calculate Margin
-        if revenue > 0:
-            profit_margin = (net_profit / revenue) * 100
-        else:
-            profit_margin = 0.0
+        profit_margin = (net_profit / revenue * 100) if revenue > 0 else 0.0
 
-        # Update Trip
+        # Update Trip record
+        trip.fuel_cost = fuel_cost
+        trip.other_expenses = other_expenses
         trip.total_cost = total_cost
         trip.revenue = revenue
         trip.net_profit = net_profit

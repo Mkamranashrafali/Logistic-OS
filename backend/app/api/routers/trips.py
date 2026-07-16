@@ -72,12 +72,17 @@ def delete_trip(
         raise HTTPException(status_code=403, detail="Not authorized to access this resource")
         
     from app.models.order import Order
-    orders = db.query(Order).filter(Order.trip_id == id).all()
+    from app.services import order_service
+    orders = db.query(Order).filter(Order.trip_id == id, Order.is_deleted == False).all()
     
     trip_service.remove(db, id=id)
     
-    # Free resources
+    # Free resources and auto-delete associated orders
     for order in orders:
+        try:
+            order_service.remove(db, id=order.id)
+        except Exception:
+            pass
         if order.assigned_driver_id:
             from app.models.driver import Driver
             driver = db.query(Driver).filter(Driver.id == order.assigned_driver_id).first()

@@ -30,10 +30,10 @@ class AnalyticsService:
 
         # Revenue
         rev_query = db.query(
-            func.coalesce(func.sum(Order.amount), 0.0).label('total'),
-            func.sum(case((Order.created_at >= today_start, Order.amount), else_=0)).label('today'),
-            func.sum(case((Order.created_at >= week_start, Order.amount), else_=0)).label('week'),
-            func.sum(case((Order.created_at >= month_start, Order.amount), else_=0)).label('month')
+            func.coalesce(func.sum(Order.deal_price), 0.0).label('total'),
+            func.sum(case((Order.created_at >= today_start, Order.deal_price), else_=0)).label('today'),
+            func.sum(case((Order.created_at >= week_start, Order.deal_price), else_=0)).label('week'),
+            func.sum(case((Order.created_at >= month_start, Order.deal_price), else_=0)).label('month')
         ).filter(Order.company_id == company_id, Order.is_deleted == False)
         
         # If user passed a global date filter, it will only restrict the total (and today/week/month relative to that filter)
@@ -93,7 +93,7 @@ class AnalyticsService:
         # Revenue by day
         rev_q = db.query(
             func.date(Order.created_at).label('date'),
-            func.sum(Order.amount).label('revenue')
+            func.sum(Order.deal_price).label('revenue')
         ).filter(Order.company_id == company_id, Order.is_deleted == False)
         rev_q = AnalyticsService._apply_date_filter(rev_q, Order.created_at, start_date, end_date)
         revenues = rev_q.group_by(func.date(Order.created_at)).order_by(func.date(Order.created_at)).all()
@@ -128,7 +128,7 @@ class AnalyticsService:
             Driver.name,
             func.count(Order.id).label('total_orders'),
             func.sum(case((Order.order_status == OrderStatus.DELIVERED.value, 1), else_=0)).label('completed_orders'),
-            func.coalesce(func.sum(Order.amount), 0.0).label('revenue_generated')
+            func.coalesce(func.sum(Order.deal_price), 0.0).label('revenue_generated')
         ).outerjoin(Order, Order.assigned_driver_id == Driver.id).filter(
             Driver.company_id == company_id, 
             Driver.is_deleted == False
@@ -142,16 +142,22 @@ class AnalyticsService:
         
         driver_stats = []
         for r in results:
+            # Get profit for this driver
+            driver_profit_q = db.query(func.sum(Trip.net_profit)).join(Order, Order.trip_id == Trip.id).filter(Order.assigned_driver_id == r.id, Trip.is_deleted == False)
+            driver_profit_q = AnalyticsService._apply_date_filter(driver_profit_q, Trip.created_at, start_date, end_date)
+            driver_profit = driver_profit_q.scalar() or 0.0
+
             driver_stats.append({
                 "driver_id": r.id,
                 "name": r.name,
                 "total_orders": r.total_orders,
                 "completed_orders": r.completed_orders,
                 "revenue_generated": float(r.revenue_generated),
+                "profit": float(driver_profit),
                 "performance_score": min(100, int((r.completed_orders / max(1, r.total_orders)) * 100)) if r.total_orders else 0
             })
             
-        return sorted(driver_stats, key=lambda x: x['performance_score'], reverse=True)
+        return sorted(driver_stats, key=lambda x: x['profit'], reverse=True)
 
     @staticmethod
     def get_trip_analytics(db: Session, company_id: str, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
@@ -175,11 +181,18 @@ class AnalyticsService:
             if t.expected_delivery_date and t.end_time and t.end_time > t.expected_delivery_date:
                 delayed_trips += 1
                 
+        most_profitable = db.query(Trip).filter(Trip.company_id == company_id, Trip.is_deleted == False).order_by(desc(Trip.net_profit)).first()
+        least_profitable = db.query(Trip).filter(Trip.company_id == company_id, Trip.is_deleted == False).order_by(Trip.net_profit).first()
+
         return {
             "total_trips": agg.total_trips or 0,
             "delayed_trips": delayed_trips,
             "average_cost_per_trip": round(float(agg.avg_cost or 0), 2),
             "average_profit_per_trip": round(float(agg.avg_profit or 0), 2),
+            "most_profitable_trip": most_profitable.id if most_profitable else None,
+            "most_profitable_amount": float(most_profitable.net_profit) if most_profitable else 0,
+            "least_profitable_trip": least_profitable.id if least_profitable else None,
+            "least_profitable_amount": float(least_profitable.net_profit) if least_profitable else 0,
         }
 
     @staticmethod
@@ -241,15 +254,20 @@ class AnalyticsService:
         
         stats = []
         for v in vehicles:
+            vehicle_profit_q = db.query(func.sum(Trip.net_profit)).join(Order, Order.trip_id == Trip.id).filter(Order.assigned_vehicle_id == v.id, Trip.is_deleted == False)
+            vehicle_profit_q = AnalyticsService._apply_date_filter(vehicle_profit_q, Trip.created_at, start_date, end_date)
+            vehicle_profit = vehicle_profit_q.scalar() or 0.0
+
             stats.append({
                 "vehicle_id": v.id,
                 "plate_number": v.plate_number,
                 "status": v.availability_status,
                 "utilization_pct": 100 if v.availability_status == 'on_trip' else 0, # Simple mock metric
-                "maintenance_due": v.availability_status == 'maintenance'
+                "maintenance_due": v.availability_status == 'maintenance',
+                "profit": float(vehicle_profit)
             })
             
-        return stats
+        return sorted(stats, key=lambda x: x['profit'], reverse=True)
 
     @staticmethod
     def get_customer_analytics(db: Session, company_id: str, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> List[Dict[str, Any]]:
@@ -257,32 +275,54 @@ class AnalyticsService:
             Customer.id,
             Customer.name,
             func.count(Order.id).label('total_orders'),
-            func.sum(Order.amount).label('total_revenue')
+            func.sum(Order.deal_price).label('total_revenue')
         ).outerjoin(Order, Order.customer_id == Customer.id).filter(Customer.company_id == company_id, Customer.is_deleted == False)
         c_query = AnalyticsService._apply_date_filter(c_query, Order.created_at, start_date, end_date)
         
         results = c_query.group_by(Customer.id, Customer.name).order_by(desc('total_revenue')).limit(10).all()
         
-        return [
-            {
+        c_stats = []
+        for r in results:
+            customer_profit_q = db.query(func.sum(Trip.net_profit)).join(Order, Order.trip_id == Trip.id).filter(Order.customer_id == r.id, Trip.is_deleted == False)
+            customer_profit_q = AnalyticsService._apply_date_filter(customer_profit_q, Trip.created_at, start_date, end_date)
+            customer_profit = customer_profit_q.scalar() or 0.0
+
+            c_stats.append({
                 "customer_id": r.id,
                 "name": r.name,
                 "total_orders": r.total_orders or 0,
-                "total_revenue": float(r.total_revenue or 0)
-            } for r in results
-        ]
+                "total_revenue": float(r.total_revenue or 0),
+                "profit": float(customer_profit)
+            })
+            
+        return sorted(c_stats, key=lambda x: x['profit'], reverse=True)
 
     @staticmethod
-    def get_financial_analytics(db: Session, company_id: str, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, float]:
+    def get_financial_analytics(db: Session, company_id: str, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> Dict[str, Any]:
         # Total Revenue
-        rev_q = db.query(func.coalesce(func.sum(Order.amount), 0.0)).filter(Order.company_id == company_id, Order.is_deleted == False)
+        rev_q = db.query(func.coalesce(func.sum(Order.deal_price), 0.0)).filter(Order.company_id == company_id, Order.is_deleted == False)
         rev_q = AnalyticsService._apply_date_filter(rev_q, Order.created_at, start_date, end_date)
         revenue = float(rev_q.scalar())
 
-        # Total Other Expenses
-        exp_q = db.query(func.coalesce(func.sum(Expense.amount), 0.0)).join(Trip, Expense.trip_id == Trip.id).filter(Trip.company_id == company_id, Expense.is_deleted == False)
+        # Total Expenses
+        exp_q = db.query(Expense.category, func.sum(Expense.amount).label('total')).join(Trip, Expense.trip_id == Trip.id).filter(Trip.company_id == company_id, Expense.is_deleted == False)
         exp_q = AnalyticsService._apply_date_filter(exp_q, Expense.created_at, start_date, end_date)
-        total_expenses = float(exp_q.scalar())
+        expense_rows = exp_q.group_by(Expense.category).all()
+        
+        expense_breakdown = {}
+        total_expenses = 0.0
+        fuel_cost = 0.0
+        other_expenses = 0.0
+        for r in expense_rows:
+            cat = r.category or "Other"
+            amt = float(r.total or 0.0)
+            if cat != 'Delivery Proof':
+                total_expenses += amt
+                if cat == 'Fuel':
+                    fuel_cost += amt
+                else:
+                    other_expenses += amt
+                expense_breakdown[cat] = expense_breakdown.get(cat, 0.0) + amt
 
         profit = revenue - total_expenses
         margin = (profit / revenue * 100) if revenue > 0 else 0.0
@@ -290,10 +330,11 @@ class AnalyticsService:
         return {
             "revenue": revenue,
             "expenses": total_expenses,
-            "fuel_cost": 0.0,
-            "other_expenses": total_expenses,
+            "fuel_cost": fuel_cost,
+            "other_expenses": other_expenses,
             "profit": profit,
-            "profit_margin_pct": round(margin, 2)
+            "profit_margin_pct": round(margin, 2),
+            "expense_breakdown": [{"category": k, "amount": v} for k, v in expense_breakdown.items()]
         }
 
 analytics_service = AnalyticsService()

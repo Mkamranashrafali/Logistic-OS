@@ -28,10 +28,24 @@ class TripResponse(TripBase):
     end_time: Optional[datetime]
     current_location: Optional[str]
     distance_travelled: float
+    fuel_cost: Optional[float] = 0.0
+    other_expenses: Optional[float] = 0.0
     total_cost: float
     revenue: float
     net_profit: float
     profit_margin: float
+    created_at: datetime
+    updated_at: datetime
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class DriverTripResponse(TripBase):
+    id: str
+    company_id: str
+    start_time: Optional[datetime]
+    end_time: Optional[datetime]
+    current_location: Optional[str]
+    distance_travelled: float
     created_at: datetime
     updated_at: datetime
     

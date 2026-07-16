@@ -10,7 +10,7 @@ from app.models.trip import Trip
 from app.api.dependencies.roles import require_roles
 from app.core.responses import success_response
 from app.services.workflow_service import TripWorkflowService
-from app.schemas.trip import TripResponse
+from app.schemas.trip import TripResponse, DriverTripResponse
 from app.models.activity import TripActivityLog
 from pydantic import BaseModel
 from datetime import datetime, timezone
@@ -144,9 +144,7 @@ def get_driver_trips(
         Order.assigned_driver_id == driver.id
     ).distinct().order_by(Trip.created_at.desc()).all()
     
-    # We must also ensure orders are serialized. The TripResponse schema might not include orders directly if it's basic,
-    # but let's dump standard trip data as expected. If frontend expects orders, Trip schema usually has it.
-    return success_response(message="Trips fetched", data=[TripResponse.model_validate(t).model_dump() for t in trips])
+    return success_response(message="Trips fetched", data=[DriverTripResponse.model_validate(t).model_dump() for t in trips])
 
 @router.post("/trips/{id}/start", summary="Start a trip")
 def start_trip(
@@ -159,7 +157,7 @@ def start_trip(
         raise HTTPException(status_code=403, detail="You can only start your currently assigned trip")
         
     trip = TripWorkflowService.start_trip(db=db, trip_id=id, company_id=current_user.company_id)
-    return success_response(message="Trip started successfully", data=TripResponse.model_validate(trip).model_dump())
+    return success_response(message="Trip started successfully", data=DriverTripResponse.model_validate(trip).model_dump())
 
 @router.post("/trips/{id}/complete", summary="Complete a trip")
 def complete_trip(
@@ -172,7 +170,7 @@ def complete_trip(
         raise HTTPException(status_code=403, detail="You can only complete your currently assigned trip")
         
     trip = TripWorkflowService.complete_trip(db=db, trip_id=id, company_id=current_user.company_id)
-    return success_response(message="Trip completed successfully", data=TripResponse.model_validate(trip).model_dump())
+    return success_response(message="Trip completed successfully", data=DriverTripResponse.model_validate(trip).model_dump())
 
 @router.patch("/trips/{id}/status", summary="Update trip progress")
 def update_trip_status(
@@ -192,7 +190,7 @@ def update_trip_status(
         location=payload.location, 
         notes=payload.notes
     )
-    return success_response(message="Trip progress updated", data=TripResponse.model_validate(trip).model_dump())
+    return success_response(message="Trip progress updated", data=DriverTripResponse.model_validate(trip).model_dump())
 
 @router.post("/trips/{id}/pause", summary="Pause a trip")
 def pause_trip(
@@ -204,7 +202,7 @@ def pause_trip(
     if driver.current_trip_id != id:
         raise HTTPException(status_code=403, detail="You can only pause your currently assigned trip")
     trip = TripWorkflowService.pause_trip(db=db, trip_id=id, company_id=current_user.company_id)
-    return success_response(message="Trip paused successfully", data=TripResponse.model_validate(trip).model_dump())
+    return success_response(message="Trip paused successfully", data=DriverTripResponse.model_validate(trip).model_dump())
 
 @router.post("/trips/{id}/resume", summary="Resume a paused trip")
 def resume_trip(
@@ -216,7 +214,7 @@ def resume_trip(
     if driver.current_trip_id != id:
         raise HTTPException(status_code=403, detail="You can only resume your currently assigned trip")
     trip = TripWorkflowService.resume_trip(db=db, trip_id=id, company_id=current_user.company_id)
-    return success_response(message="Trip resumed successfully", data=TripResponse.model_validate(trip).model_dump())
+    return success_response(message="Trip resumed successfully", data=DriverTripResponse.model_validate(trip).model_dump())
 
 
 

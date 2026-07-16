@@ -20,6 +20,7 @@ export default function CreateOrderPage() {
   const [deliveryDate, setDeliveryDate] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
   const [deliveryLocation, setDeliveryLocation] = useState("");
+  const [dealPrice, setDealPrice] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function CreateOrderPage() {
         customer_id: customerId || null,
         pickup_location: pickupLocation,
         delivery_location: deliveryLocation,
+        deal_price: parseFloat(dealPrice),
         expected_delivery_date: deliveryDate ? new Date(deliveryDate).toISOString() : null
       };
 
@@ -108,6 +110,10 @@ export default function CreateOrderPage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Destination</label>
                 <Input placeholder="Enter destination address" value={deliveryLocation} onChange={e => setDeliveryLocation(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Deal Price ($)</label>
+                <Input type="number" step="0.01" placeholder="Enter agreed price" value={dealPrice} onChange={e => setDealPrice(e.target.value)} required />
               </div>
             </div>
           </CardContent>
