@@ -41,7 +41,16 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   }
 
   if (!response.ok) {
-    throw new ApiError(response.status, data?.detail || 'An error occurred', data);
+    let errorMessage = 'An error occurred';
+    if (typeof data?.detail === 'string') {
+      errorMessage = data.detail;
+    } else if (Array.isArray(data?.detail)) {
+      errorMessage = data.detail.map((err: any) => `${err.loc?.slice(-1)?.[0] || 'Field'}: ${err.msg}`).join(', ');
+    } else if (data?.message) {
+      errorMessage = data.message;
+    }
+    
+    throw new ApiError(response.status, errorMessage, data);
   }
 
   return data?.data !== undefined ? data.data : data;

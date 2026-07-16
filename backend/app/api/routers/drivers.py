@@ -57,6 +57,18 @@ def create_driver(
         return success_response(message="Driver created successfully", data=DriverResponse.model_validate(item).model_dump())
     except Exception as e:
         db.rollback()
+        error_msg = str(e).lower()
+        if "unique constraint" in error_msg or "duplicate key" in error_msg:
+            if "email" in error_msg:
+                detail = "A driver with this email already exists."
+            elif "license_number" in error_msg:
+                detail = "A driver with this license number already exists."
+            elif "phone" in error_msg:
+                detail = "A driver with this phone number already exists."
+            else:
+                detail = "A driver with these unique details already exists."
+            raise HTTPException(status_code=400, detail=detail)
+            
         raise HTTPException(status_code=400, detail=f"Failed to create driver: {str(e)}")
 
 @router.get("/", response_model=dict, summary="Get all drivers")

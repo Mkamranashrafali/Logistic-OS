@@ -17,9 +17,19 @@ def create_vehicle(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    # Automatically enforce multi-tenancy via current_user.company_id
-    item = vehicle_service.create(db, obj_in=obj_in, company_id=current_user.company_id)
-    return success_response(message="Vehicle created successfully", data=VehicleResponse.model_validate(item).model_dump())
+    try:
+        item = vehicle_service.create(db, obj_in=obj_in, company_id=current_user.company_id)
+        return success_response(message="Vehicle created successfully", data=VehicleResponse.model_validate(item).model_dump())
+    except Exception as e:
+        db.rollback()
+        error_msg = str(e).lower()
+        if "unique constraint" in error_msg or "duplicate key" in error_msg:
+            from fastapi import HTTPException
+            if "plate_number" in error_msg or "license_plate" in error_msg:
+                raise HTTPException(status_code=400, detail="A vehicle with this plate number already exists.")
+            raise HTTPException(status_code=400, detail="A vehicle with these unique details already exists.")
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=f"Failed to create vehicle: {str(e)}")
 
 @router.get("/", response_model=dict, summary="Get all vehicles")
 def read_vehicles(

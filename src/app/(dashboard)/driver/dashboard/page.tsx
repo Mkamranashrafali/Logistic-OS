@@ -43,20 +43,30 @@ export default function DriverDashboardPage() {
     }
   };
 
+  const [tripActionLoading, setTripActionLoading] = useState(false);
+
   const handleTripAction = async (action: 'start' | 'pause' | 'resume' | 'complete', tripId: string) => {
+    if (tripActionLoading) return;
+    setTripActionLoading(true);
     try {
       await api.post(`/driver/trips/${tripId}/${action}`, {});
       fetchData();
     } catch (err: any) {
       alert(err.message || `Failed to ${action} trip`);
+    } finally {
+      setTripActionLoading(false);
     }
   };
 
 
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleExpenseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeTrip) return;
+    if (!activeTrip || isSubmitting) return;
+    
+    setIsSubmitting(true);
     try {
       await api.post('/driver/expenses', {
         trip_id: activeTrip.id,
@@ -69,6 +79,8 @@ export default function DriverDashboardPage() {
       fetchData();
     } catch (err: any) {
       alert(err.message || "Failed to add expense");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -117,23 +129,23 @@ export default function DriverDashboardPage() {
                 
                 <div className="pt-4 border-t flex flex-wrap gap-2">
                   {activeTrip.trip_status === 'created' && (
-                    <Button onClick={() => handleTripAction('start', activeTrip.id)}>
-                      <Play className="h-4 w-4 mr-2" /> Start Trip
+                    <Button disabled={tripActionLoading} onClick={() => handleTripAction('start', activeTrip.id)}>
+                      {tripActionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />} Start Trip
                     </Button>
                   )}
                   {activeTrip.trip_status === 'started' && (
                     <>
-                      <Button variant="secondary" onClick={() => handleTripAction('pause', activeTrip.id)}>
-                        <Pause className="h-4 w-4 mr-2" /> Pause
+                      <Button disabled={tripActionLoading} variant="secondary" onClick={() => handleTripAction('pause', activeTrip.id)}>
+                        {tripActionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Pause className="h-4 w-4 mr-2" />} Pause
                       </Button>
-                      <Button variant="default" className="bg-green-600 hover:bg-green-700" onClick={() => handleTripAction('complete', activeTrip.id)}>
-                        <Square className="h-4 w-4 mr-2" /> Complete Trip
+                      <Button disabled={tripActionLoading} variant="default" className="bg-green-600 hover:bg-green-700" onClick={() => handleTripAction('complete', activeTrip.id)}>
+                        {tripActionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Square className="h-4 w-4 mr-2" />} Complete Trip
                       </Button>
                     </>
                   )}
                   {activeTrip.trip_status === 'PAUSED' && (
-                    <Button variant="secondary" onClick={() => handleTripAction('resume', activeTrip.id)}>
-                      <Play className="h-4 w-4 mr-2" /> Resume
+                    <Button disabled={tripActionLoading} variant="secondary" onClick={() => handleTripAction('resume', activeTrip.id)}>
+                      {tripActionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />} Resume
                     </Button>
                   )}
                   {activeTrip.trip_status === 'completed' && (
@@ -183,7 +195,8 @@ export default function DriverDashboardPage() {
                             <Input type="file" />
                           </div>
 
-                          <Button type="submit" className="w-full">
+                          <Button type="submit" className="w-full" disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             {expenseCategory === "Delivery Proof" ? "Upload Proof" : "Save Expense"}
                           </Button>
                         </form>
