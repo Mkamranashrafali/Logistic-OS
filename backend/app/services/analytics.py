@@ -226,12 +226,23 @@ class AnalyticsService:
         today_cost = db.query(func.coalesce(func.sum(FuelEntry.amount), 0.0)).filter(FuelEntry.company_id == company_id, FuelEntry.date >= today_start).scalar()
         month_cost = db.query(func.coalesce(func.sum(FuelEntry.amount), 0.0)).filter(FuelEntry.company_id == company_id, FuelEntry.date >= month_start).scalar()
 
-        by_vehicle = db.query(
-            Vehicle.license_plate,
-            func.sum(FuelEntry.amount).label('total_cost')
-        ).join(FuelEntry, FuelEntry.vehicle_id == Vehicle.id).filter(Vehicle.company_id == company_id)
-        by_vehicle = AnalyticsService._apply_date_filter(by_vehicle, FuelEntry.date, start_date, end_date)
-        by_vehicle_res = by_vehicle.group_by(Vehicle.license_plate).all()
+        fuel_entries = db.query(FuelEntry.trip_id, FuelEntry.amount).filter(FuelEntry.company_id == company_id)
+        fuel_entries = AnalyticsService._apply_date_filter(fuel_entries, FuelEntry.date, start_date, end_date).all()
+        
+        trip_vehicles = db.query(Order.trip_id, Vehicle.plate_number)\
+            .join(Vehicle, Order.assigned_vehicle_id == Vehicle.id)\
+            .filter(Order.company_id == company_id)\
+            .filter(Order.trip_id.isnot(None))\
+            .distinct().all()
+            
+        trip_to_plate = {tv.trip_id: tv.plate_number for tv in trip_vehicles}
+        
+        vehicle_costs = {}
+        for fe in fuel_entries:
+            plate = trip_to_plate.get(fe.trip_id, "Unknown")
+            vehicle_costs[plate] = vehicle_costs.get(plate, 0.0) + float(fe.amount or 0.0)
+            
+        by_vehicle_res = [{"vehicle": p, "total_cost": c} for p, c in vehicle_costs.items()]
 
         by_driver = db.query(
             Driver.name,
@@ -243,7 +254,7 @@ class AnalyticsService:
         return {
             "today_cost": float(today_cost),
             "month_cost": float(month_cost),
-            "by_vehicle": [{"vehicle": r.license_plate, "cost": float(r.total_cost or 0)} for r in by_vehicle_res],
+            "by_vehicle": [{"vehicle": r["vehicle"], "cost": float(r["total_cost"])} for r in by_vehicle_res],
             "by_driver": [{"driver": r.name, "cost": float(r.total_cost or 0)} for r in by_driver_res]
         }
 
@@ -252,7 +263,7 @@ class AnalyticsService:
         # Vehicle utilization
         v_query = db.query(
             Vehicle.id,
-            Vehicle.license_plate,
+            Vehicle.plate_number,
             Vehicle.availability_status
         ).filter(Vehicle.company_id == company_id, Vehicle.is_deleted == False)
         
@@ -262,7 +273,7 @@ class AnalyticsService:
         for v in vehicles:
             stats.append({
                 "vehicle_id": v.id,
-                "license_plate": v.license_plate,
+                "plate_number": v.plate_number,
                 "status": v.availability_status,
                 "utilization_pct": 100 if v.availability_status == 'on_trip' else 0, # Simple mock metric
                 "maintenance_due": v.availability_status == 'maintenance'
