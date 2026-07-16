@@ -8,6 +8,7 @@ from app.models.order import Order
 from app.models.trip import Trip
 from app.models.driver import Driver
 from app.models.vehicle import Vehicle
+from app.models.activity import TripActivityLog
 
 class OrderWorkflowService:
     @staticmethod
@@ -58,6 +59,19 @@ class OrderWorkflowService:
 
 class TripWorkflowService:
     @staticmethod
+    def log_activity(db: Session, trip_id: str, company_id: str, driver_id: str, action_type: str, notes: str = None):
+        log = TripActivityLog(
+            id=str(uuid.uuid4()),
+            company_id=company_id,
+            trip_id=trip_id,
+            driver_id=driver_id,
+            action_type=action_type,
+            notes=notes
+        )
+        db.add(log)
+        db.commit()
+
+    @staticmethod
     def start_trip(db: Session, trip_id: str, company_id: str):
         trip = db.query(Trip).filter(Trip.id == trip_id, Trip.company_id == company_id, Trip.is_deleted == False).first()
         if not trip:
@@ -88,6 +102,12 @@ class TripWorkflowService:
                     
         db.commit()
         db.refresh(trip)
+        
+        # Log Activity
+        driver_id = orders[0].assigned_driver_id if orders else None
+        if driver_id:
+            TripWorkflowService.log_activity(db, trip.id, company_id, driver_id, "STARTED")
+            
         return trip
 
     @staticmethod
@@ -120,6 +140,12 @@ class TripWorkflowService:
                     
         db.commit()
         db.refresh(trip)
+        
+        # Log Activity
+        driver_id = orders[0].assigned_driver_id if orders else None
+        if driver_id:
+            TripWorkflowService.log_activity(db, trip.id, company_id, driver_id, "COMPLETED")
+            
         return trip
         
     @staticmethod
@@ -137,4 +163,41 @@ class TripWorkflowService:
             
         db.commit()
         db.refresh(trip)
+        return trip
+        
+    @staticmethod
+    def pause_trip(db: Session, trip_id: str, company_id: str):
+        trip = db.query(Trip).filter(Trip.id == trip_id, Trip.company_id == company_id, Trip.is_deleted == False).first()
+        if not trip:
+            raise HTTPException(status_code=404, detail="Trip not found")
+        if trip.trip_status != TripStatus.STARTED.value:
+            raise HTTPException(status_code=400, detail="Only started trips can be paused")
+            
+        # Add paused to enum values later if needed, using custom string for now or just "PAUSED"
+        trip.trip_status = "PAUSED"
+        db.commit()
+        db.refresh(trip)
+        
+        order = db.query(Order).filter(Order.trip_id == trip.id).first()
+        if order and order.assigned_driver_id:
+            TripWorkflowService.log_activity(db, trip.id, company_id, order.assigned_driver_id, "PAUSED")
+            
+        return trip
+        
+    @staticmethod
+    def resume_trip(db: Session, trip_id: str, company_id: str):
+        trip = db.query(Trip).filter(Trip.id == trip_id, Trip.company_id == company_id, Trip.is_deleted == False).first()
+        if not trip:
+            raise HTTPException(status_code=404, detail="Trip not found")
+        if trip.trip_status != "PAUSED":
+            raise HTTPException(status_code=400, detail="Only paused trips can be resumed")
+            
+        trip.trip_status = TripStatus.STARTED.value
+        db.commit()
+        db.refresh(trip)
+        
+        order = db.query(Order).filter(Order.trip_id == trip.id).first()
+        if order and order.assigned_driver_id:
+            TripWorkflowService.log_activity(db, trip.id, company_id, order.assigned_driver_id, "RESUMED")
+            
         return trip

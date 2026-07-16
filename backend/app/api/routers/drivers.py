@@ -8,6 +8,8 @@ from app.api.dependencies.auth import get_current_user
 from app.core.responses import success_response
 from app.schemas.driver import DriverCreate, DriverUpdate, DriverResponse
 from app.services import driver_service
+from app.core.security import get_password_hash
+import uuid
 
 router = APIRouter()
 
@@ -17,9 +19,45 @@ def create_driver(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    # Automatically enforce multi-tenancy via current_user.company_id
-    item = driver_service.create(db, obj_in=obj_in, company_id=current_user.company_id)
-    return success_response(message="Driver created successfully", data=DriverResponse.model_validate(item).model_dump())
+    if not obj_in.email:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Driver must have an email address to create a login account.")
+    
+    from fastapi import HTTPException
+    # Check if user with email already exists
+    existing_user = db.query(User).filter(User.email == obj_in.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="A user with this email already exists.")
+
+    from app.models.driver import Driver
+    existing_driver = db.query(Driver).filter(Driver.email == obj_in.email).first()
+    if existing_driver:
+        raise HTTPException(status_code=400, detail="A driver with this email already exists.")
+
+    # Create the user first without committing
+    new_user = User(
+        id=str(uuid.uuid4()),
+        company_id=current_user.company_id,
+        email=obj_in.email,
+        password_hash=get_password_hash("112233"),
+        role="driver",
+        is_active=True,
+        must_change_password=True
+    )
+    db.add(new_user)
+    
+    try:
+        db.flush()
+        
+        # Link user_id to driver payload
+        obj_in.user_id = new_user.id
+        
+        # This will commit the transaction including the User
+        item = driver_service.create(db, obj_in=obj_in, company_id=current_user.company_id)
+        return success_response(message="Driver created successfully", data=DriverResponse.model_validate(item).model_dump())
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to create driver: {str(e)}")
 
 @router.get("/", response_model=dict, summary="Get all drivers")
 def read_drivers(

@@ -8,6 +8,7 @@ interface User {
   email: string;
   role: string;
   company_id: string;
+  must_change_password?: boolean;
 }
 
 interface AuthContextType {
@@ -15,6 +16,7 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, user: User) => void;
   logout: () => void;
+  updateAuthUser: (user: User) => void;
   isLoading: boolean;
 }
 
@@ -42,7 +44,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
-    router.push('/dashboard');
+    
+    if (newUser.must_change_password) {
+      router.push('/change-password');
+    } else if (newUser.role === 'driver') {
+      router.push('/driver/dashboard');
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
+  const updateAuthUser = (updatedUser: User) => {
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
   };
 
   const logout = () => {
@@ -54,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateAuthUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

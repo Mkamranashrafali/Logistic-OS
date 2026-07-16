@@ -1,9 +1,10 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import Optional
 from datetime import datetime
 
 class DriverBase(BaseModel):
     name: str
+    email: Optional[EmailStr] = None
     license_number: Optional[str] = None
     phone: Optional[str] = None
     availability_status: Optional[str] = "available"

@@ -5,8 +5,8 @@ from typing import Any
 
 from app.database.session import get_db
 from app.models.user import User
-from app.schemas.user import UserLogin, UserResponse, Token
-from app.core.security import verify_password, create_access_token
+from app.schemas.user import UserLogin, UserResponse, Token, ChangePasswordRequest
+from app.core.security import verify_password, create_access_token, get_password_hash
 from app.core.config import settings
 from app.api.dependencies.auth import get_current_user
 from app.core.responses import success_response
@@ -42,6 +42,18 @@ def logout(current_user: User = Depends(get_current_user)) -> Any:
     # In a stateless JWT system, logout is mostly handled client-side by deleting the token.
     # To implement server-side invalidation, a token blacklist or Redis would be needed.
     return success_response(message="Successfully logged out")
+
+@router.post("/change-password", summary="Change password on first login")
+def change_password(
+    payload: ChangePasswordRequest, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    current_user.password_hash = get_password_hash(payload.new_password)
+    current_user.must_change_password = False
+    db.commit()
+    db.refresh(current_user)
+    return success_response(message="Password updated successfully")
 
 @router.get("/me", summary="Get current authenticated user")
 def get_me(current_user: User = Depends(get_current_user)) -> Any:

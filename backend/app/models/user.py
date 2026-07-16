@@ -13,5 +13,6 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
     password_hash = Column(String, nullable=False)
     role = Column(String, default="user", nullable=False)
     is_active = Column(Boolean, default=True)
+    must_change_password = Column(Boolean, default=False)
 
     company = relationship("Company", back_populates="users")

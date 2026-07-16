@@ -23,6 +23,7 @@ export function DriverModal({
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     license_number: "",
     phone: "",
     availability_status: "available",
@@ -32,6 +33,7 @@ export function DriverModal({
     if (driver) {
       setFormData({
         name: driver.name || "",
+        email: driver.email || "",
         license_number: driver.license_number || "",
         phone: driver.phone || "",
         availability_status: driver.availability_status || "available",
@@ -39,6 +41,7 @@ export function DriverModal({
     } else {
       setFormData({
         name: "",
+        email: "",
         license_number: "",
         phone: "",
         availability_status: "available",
@@ -82,6 +85,17 @@ export function DriverModal({
               value={formData.name}
               onChange={e => setFormData({...formData, name: e.target.value})}
               placeholder="John Doe"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Email <span className="text-red-500">*</span></label>
+            <Input 
+              required 
+              type="email"
+              value={formData.email}
+              onChange={e => setFormData({...formData, email: e.target.value})}
+              placeholder="driver@example.com"
+              disabled={!!driver}
             />
           </div>
           <div className="space-y-2">

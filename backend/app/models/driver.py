@@ -13,6 +13,7 @@ class Driver(Base, TimestampMixin, SoftDeleteMixin):
     user_id = Column(String, ForeignKey("users.id"), nullable=True, index=True)
     
     name = Column(String, nullable=False)
+    email = Column(String, nullable=True)
     license_number = Column(String, nullable=True)
     phone = Column(String, nullable=True)
     

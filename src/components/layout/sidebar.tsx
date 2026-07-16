@@ -37,7 +37,18 @@ const secondaryNavigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+
+  const isDriver = user?.role === 'driver';
+
+  const currentNavigation = isDriver 
+    ? [
+        { name: "Portal", href: "/driver/dashboard", icon: LayoutDashboard },
+        { name: "Trips", href: "/driver/trips", icon: Map },
+        { name: "Fuel & Expenses", href: "/driver/expenses", icon: Receipt },
+        { name: "Profile", href: "/driver/profile", icon: Users },
+      ]
+    : navigation;
 
   return (
     <div className="flex h-full w-64 flex-col border-r bg-sidebar px-4 py-6">
@@ -49,7 +60,7 @@ export function Sidebar() {
       </div>
 
       <div className="flex flex-1 flex-col gap-1">
-        {navigation.map((item) => {
+        {currentNavigation.map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
             <Link
@@ -70,7 +81,7 @@ export function Sidebar() {
       </div>
 
       <div className="flex flex-col gap-1 pt-6 border-t">
-        {secondaryNavigation.map((item) => {
+        {secondaryNavigation.filter(item => isDriver ? item.action === "logout" : true).map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
             <Link
