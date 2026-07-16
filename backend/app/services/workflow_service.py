@@ -17,8 +17,8 @@ class OrderWorkflowService:
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
         
-        if order.order_status != OrderStatus.PENDING.value:
-            raise HTTPException(status_code=400, detail="Only pending orders can be assigned")
+        if order.order_status not in [OrderStatus.PENDING.value, OrderStatus.PLANNING.value]:
+            raise HTTPException(status_code=400, detail="Only planning or pending orders can be assigned")
 
         driver = db.query(Driver).filter(Driver.id == driver_id, Driver.company_id == company_id, Driver.is_deleted == False).first()
         vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id, Vehicle.company_id == company_id, Vehicle.is_deleted == False).first()

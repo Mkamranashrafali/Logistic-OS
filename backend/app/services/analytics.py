@@ -45,6 +45,7 @@ class AnalyticsService:
         ord_query = db.query(
             func.count(Order.id).label('total'),
             func.sum(case((Order.order_status == OrderStatus.PENDING.value, 1), else_=0)).label('pending'),
+            func.sum(case((Order.order_status == OrderStatus.PLANNING.value, 1), else_=0)).label('planning'),
             func.sum(case((Order.order_status == OrderStatus.ASSIGNED.value, 1), else_=0)).label('assigned'),
             func.sum(case((Order.order_status == OrderStatus.DELIVERED.value, 1), else_=0)).label('delivered'),
             func.sum(case((Order.order_status == OrderStatus.CANCELLED.value, 1), else_=0)).label('cancelled')
@@ -79,7 +80,7 @@ class AnalyticsService:
 
         return {
             "revenue": {"total": float(revenue.total or 0), "today": float(revenue.today or 0), "week": float(revenue.week or 0), "month": float(revenue.month or 0)},
-            "orders": {"total": orders.total or 0, "pending": orders.pending or 0, "assigned": orders.assigned or 0, "delivered": orders.delivered or 0, "cancelled": orders.cancelled or 0},
+            "orders": {"total": orders.total or 0, "pending": orders.pending or 0, "planning": orders.planning or 0, "assigned": orders.assigned or 0, "delivered": orders.delivered or 0, "cancelled": orders.cancelled or 0},
             "trips": {"total": trips.total or 0, "active": trips.active or 0, "completed": trips.completed or 0},
             "drivers": {"total": drivers.total or 0, "available": drivers.available or 0, "active": drivers.active or 0, "on_leave": drivers.on_leave or 0},
             "vehicles": {"total": vehicles.total or 0, "available": vehicles.available or 0, "active": vehicles.active or 0, "maintenance": vehicles.maintenance or 0}

@@ -16,7 +16,7 @@ class Order(Base, TimestampMixin, SoftDeleteMixin):
     assigned_vehicle_id = Column(String, ForeignKey("vehicles.id"), nullable=True, index=True)
     trip_id = Column(String, ForeignKey("trips.id"), nullable=True, index=True)
     
-    order_status = Column(String, default=OrderStatus.PENDING.value, nullable=False)
+    order_status = Column(String, default=OrderStatus.PLANNING.value, nullable=False)
     assigned_at = Column(DateTime(timezone=True), nullable=True)
     
     pickup_location = Column(String, nullable=True)

@@ -66,13 +66,25 @@ export default function DashboardPage() {
         </div>
         <div className="flex gap-2">
           <Link href="/orders/create" className={buttonVariants({ variant: "default" })}><Plus className="mr-2 h-4 w-4" /> New Order</Link>
-          <Link href="/reports" className={buttonVariants({ variant: "outline" })}>
-            <FileText className="mr-2 h-4 w-4" /> View Reports
+          <Link href="/planning" className={buttonVariants({ variant: "outline" })}>
+            <Map className="mr-2 h-4 w-4" /> Planning Queue
           </Link>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <StatisticsCard 
+          title="Orders Waiting Assignment" value={stats?.orders?.planning || 0} icon={Package} 
+          description="Needs planning & resource allocation"
+        />
+        <StatisticsCard 
+          title="Drivers Busy" value={stats?.drivers?.active || 0} icon={Users} 
+          description={`Available: ${stats?.drivers?.available || 0} | Total: ${stats?.drivers?.total || 0}`}
+        />
+        <StatisticsCard 
+          title="Vehicles Busy" value={stats?.vehicles?.active || 0} icon={Truck} 
+          description={`Available: ${stats?.vehicles?.available || 0} | Maintenance: ${stats?.vehicles?.maintenance || 0}`}
+        />
         <StatisticsCard 
           title="Revenue (Month)" value={`$${(stats?.revenue?.month || 0).toFixed(2)}`} icon={DollarSign} 
           description={`Today: $${(stats?.revenue?.today || 0).toFixed(2)} | Week: $${(stats?.revenue?.week || 0).toFixed(2)}`}
@@ -84,14 +96,6 @@ export default function DashboardPage() {
         <StatisticsCard 
           title="Active Trips" value={stats?.trips?.active || 0} icon={Map} 
           description={`Completed: ${stats?.trips?.completed || 0} total trips`}
-        />
-        <StatisticsCard 
-          title="Available Drivers" value={stats?.drivers?.available || 0} icon={Users} 
-          description={`Total: ${stats?.drivers?.total || 0} | On Trip: ${stats?.drivers?.active || 0}`}
-        />
-        <StatisticsCard 
-          title="Available Vehicles" value={stats?.vehicles?.available || 0} icon={Truck} 
-          description={`Maintenance: ${stats?.vehicles?.maintenance || 0} | On Trip: ${stats?.vehicles?.active || 0}`}
         />
       </div>
 

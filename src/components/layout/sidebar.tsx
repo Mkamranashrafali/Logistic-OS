@@ -15,6 +15,7 @@ import {
   Receipt,
   FileText as FileIcon,
   History as HistoryIcon,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -22,6 +23,7 @@ import { useAuth } from "@/context/AuthContext";
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Orders", href: "/orders", icon: Package },
+  { name: "Planning", href: "/planning", icon: CalendarDays },
   { name: "Trips", href: "/trips", icon: Map },
   { name: "Drivers", href: "/drivers", icon: Users },
   { name: "Vehicles", href: "/vehicles", icon: Truck },

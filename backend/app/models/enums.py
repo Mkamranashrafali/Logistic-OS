@@ -2,6 +2,7 @@ from enum import Enum
 
 class OrderStatus(str, Enum):
     PENDING = "pending"
+    PLANNING = "planning"
     ASSIGNED = "assigned"
     IN_TRANSIT = "in_transit"
     DELIVERED = "delivered"
