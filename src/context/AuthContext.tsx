@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
 
 interface User {
   id: string;
@@ -13,8 +14,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
-  login: (token: string, user: User) => void;
+  login: (user: User) => void;
   logout: () => void;
   updateAuthUser: (user: User) => void;
   isLoading: boolean;
@@ -24,25 +24,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
+    // Actively clean up any legacy token that might be stuck in the browser
+    localStorage.removeItem('token');
+
     const storedUser = localStorage.getItem('user');
     
-    if (storedToken && storedUser) {
-      setToken(storedToken);
+    if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
     setIsLoading(false);
   }, []);
 
-  const login = (newToken: string, newUser: User) => {
-    localStorage.setItem('token', newToken);
+  const login = (newUser: User) => {
     localStorage.setItem('user', JSON.stringify(newUser));
-    setToken(newToken);
     setUser(newUser);
     
     if (newUser.must_change_password) {
@@ -59,16 +57,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(updatedUser);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout', {});
+    } catch (error) {
+      console.error("Logout failed on server", error);
+    }
+    localStorage.removeItem('token'); // Fallback cleanup
     localStorage.removeItem('user');
-    setToken(null);
     setUser(null);
     router.push('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, updateAuthUser, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, updateAuthUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -16,7 +16,7 @@ class Vehicle(Base, TimestampMixin, SoftDeleteMixin):
     plate_number = Column(String, nullable=False)
     capacity = Column(Integer, nullable=True)
     
-    availability_status = Column(String, default=VehicleStatus.AVAILABLE.value, nullable=False)
+    availability_status = Column(String, default=VehicleStatus.AVAILABLE.value, nullable=False, index=True)
     current_trip_id = Column(String, ForeignKey("trips.id"), nullable=True)
 
     company = relationship("Company", back_populates="vehicles")

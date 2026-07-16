@@ -12,22 +12,19 @@ export class ApiError extends Error {
 }
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   if (response.status === 401) {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }

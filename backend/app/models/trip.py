@@ -11,7 +11,7 @@ class Trip(Base, TimestampMixin, SoftDeleteMixin):
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     company_id = Column(String, ForeignKey("companies.id"), nullable=False, index=True)
     
-    trip_status = Column(String, default=TripStatus.CREATED.value, nullable=False)
+    trip_status = Column(String, default=TripStatus.CREATED.value, nullable=False, index=True)
     
     start_time = Column(DateTime(timezone=True), nullable=True)
     end_time = Column(DateTime(timezone=True), nullable=True)

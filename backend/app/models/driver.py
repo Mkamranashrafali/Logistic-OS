@@ -17,7 +17,7 @@ class Driver(Base, TimestampMixin, SoftDeleteMixin):
     license_number = Column(String, nullable=True)
     phone = Column(String, nullable=True)
     
-    availability_status = Column(String, default=DriverStatus.AVAILABLE.value, nullable=False)
+    availability_status = Column(String, default=DriverStatus.AVAILABLE.value, nullable=False, index=True)
     current_trip_id = Column(String, ForeignKey("trips.id"), nullable=True)
 
     company = relationship("Company", back_populates="drivers")

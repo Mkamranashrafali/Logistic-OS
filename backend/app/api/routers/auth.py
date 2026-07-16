@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import Any
@@ -14,7 +14,7 @@ from app.core.responses import success_response
 router = APIRouter()
 
 @router.post("/login", summary="Login user")
-def login(user_data: UserLogin, db: Session = Depends(get_db)) -> Any:
+def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db)) -> Any:
     user = db.query(User).filter(User.email == user_data.email).first()
     if not user or not verify_password(user_data.password, user.password_hash):
         raise HTTPException(
@@ -32,15 +32,23 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)) -> Any:
         subject=user.id, expires_delta=access_token_expires
     )
     
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    )
+    
     return success_response(
         message="Login successful", 
-        data={"access_token": access_token, "token_type": "bearer", "user": UserResponse.model_validate(user).model_dump()}
+        data={"user": UserResponse.model_validate(user).model_dump()}
     )
 
 @router.post("/logout", summary="Logout user")
-def logout(current_user: User = Depends(get_current_user)) -> Any:
-    # In a stateless JWT system, logout is mostly handled client-side by deleting the token.
-    # To implement server-side invalidation, a token blacklist or Redis would be needed.
+def logout(response: Response, current_user: User = Depends(get_current_user)) -> Any:
+    response.delete_cookie("access_token")
     return success_response(message="Successfully logged out")
 
 @router.post("/change-password", summary="Change password on first login")

@@ -27,7 +27,7 @@ export default function LoginPage() {
       });
 
       // The api client already unwraps the response, so response IS the data object
-      login(response.access_token, response.user);
+      login(response.user);
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {

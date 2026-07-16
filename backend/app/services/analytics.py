@@ -35,11 +35,9 @@ class AnalyticsService:
             func.sum(case((Order.created_at >= week_start, Order.deal_price), else_=0)).label('week'),
             func.sum(case((Order.created_at >= month_start, Order.deal_price), else_=0)).label('month')
         ).filter(Order.company_id == company_id, Order.is_deleted == False)
-        
-        # If user passed a global date filter, it will only restrict the total (and today/week/month relative to that filter)
         rev_query = AnalyticsService._apply_date_filter(rev_query, Order.created_at, start_date, end_date)
         revenue = rev_query.first()
-        
+
         # Orders
         ord_query = db.query(
             func.count(Order.id).label('total'),
@@ -140,12 +138,15 @@ class AnalyticsService:
         # We also want distance from trips and average delivery time, but complex joins might be slow.
         # We'll implement distance natively if we can outer join trip to order but it's simpler to do a subquery or separate query.
         
+        # Bulk query for profits
+        driver_profit_q = db.query(Order.assigned_driver_id, func.sum(Trip.net_profit)).join(Order, Order.trip_id == Trip.id).filter(Trip.company_id == company_id, Trip.is_deleted == False)
+        driver_profit_q = AnalyticsService._apply_date_filter(driver_profit_q, Trip.created_at, start_date, end_date)
+        driver_profits_result = driver_profit_q.group_by(Order.assigned_driver_id).all()
+        driver_profits = {row[0]: float(row[1] or 0.0) for row in driver_profits_result}
+        
         driver_stats = []
         for r in results:
-            # Get profit for this driver
-            driver_profit_q = db.query(func.sum(Trip.net_profit)).join(Order, Order.trip_id == Trip.id).filter(Order.assigned_driver_id == r.id, Trip.is_deleted == False)
-            driver_profit_q = AnalyticsService._apply_date_filter(driver_profit_q, Trip.created_at, start_date, end_date)
-            driver_profit = driver_profit_q.scalar() or 0.0
+            driver_profit = driver_profits.get(r.id, 0.0)
 
             driver_stats.append({
                 "driver_id": r.id,
@@ -171,15 +172,16 @@ class AnalyticsService:
         trip_data_q = AnalyticsService._apply_date_filter(trip_data_q, Trip.created_at, start_date, end_date)
         agg = trip_data_q.first()
         
-        # Determine delayed trips
-        delayed_trips = 0
-        trips = db.query(Trip.id, Trip.end_time, Order.expected_delivery_date)\
-            .join(Order, Order.trip_id == Trip.id)\
-            .filter(Trip.company_id == company_id, Trip.is_deleted == False).all()
-            
-        for t in trips:
-            if t.expected_delivery_date and t.end_time and t.end_time > t.expected_delivery_date:
-                delayed_trips += 1
+        # Determine delayed trips directly in SQL
+        delayed_trips_q = db.query(func.count(Trip.id)).join(Order, Order.trip_id == Trip.id).filter(
+            Trip.company_id == company_id, 
+            Trip.is_deleted == False,
+            Trip.end_time != None,
+            Order.expected_delivery_date != None,
+            Trip.end_time > Order.expected_delivery_date
+        )
+        delayed_trips_q = AnalyticsService._apply_date_filter(delayed_trips_q, Trip.created_at, start_date, end_date)
+        delayed_trips = delayed_trips_q.scalar() or 0
                 
         most_profitable = db.query(Trip).filter(Trip.company_id == company_id, Trip.is_deleted == False).order_by(desc(Trip.net_profit)).first()
         least_profitable = db.query(Trip).filter(Trip.company_id == company_id, Trip.is_deleted == False).order_by(Trip.net_profit).first()
@@ -252,11 +254,15 @@ class AnalyticsService:
         
         vehicles = v_query.all()
         
+        # Bulk query for vehicle profits
+        vehicle_profit_q = db.query(Order.assigned_vehicle_id, func.sum(Trip.net_profit)).join(Order, Order.trip_id == Trip.id).filter(Trip.company_id == company_id, Trip.is_deleted == False)
+        vehicle_profit_q = AnalyticsService._apply_date_filter(vehicle_profit_q, Trip.created_at, start_date, end_date)
+        vehicle_profits_result = vehicle_profit_q.group_by(Order.assigned_vehicle_id).all()
+        vehicle_profits = {row[0]: float(row[1] or 0.0) for row in vehicle_profits_result}
+        
         stats = []
         for v in vehicles:
-            vehicle_profit_q = db.query(func.sum(Trip.net_profit)).join(Order, Order.trip_id == Trip.id).filter(Order.assigned_vehicle_id == v.id, Trip.is_deleted == False)
-            vehicle_profit_q = AnalyticsService._apply_date_filter(vehicle_profit_q, Trip.created_at, start_date, end_date)
-            vehicle_profit = vehicle_profit_q.scalar() or 0.0
+            vehicle_profit = vehicle_profits.get(v.id, 0.0)
 
             stats.append({
                 "vehicle_id": v.id,
@@ -281,11 +287,15 @@ class AnalyticsService:
         
         results = c_query.group_by(Customer.id, Customer.name).order_by(desc('total_revenue')).limit(10).all()
         
+        # Bulk query for customer profits
+        customer_profit_q = db.query(Order.customer_id, func.sum(Trip.net_profit)).join(Order, Order.trip_id == Trip.id).filter(Trip.company_id == company_id, Trip.is_deleted == False)
+        customer_profit_q = AnalyticsService._apply_date_filter(customer_profit_q, Trip.created_at, start_date, end_date)
+        customer_profits_result = customer_profit_q.group_by(Order.customer_id).all()
+        customer_profits = {row[0]: float(row[1] or 0.0) for row in customer_profits_result}
+        
         c_stats = []
         for r in results:
-            customer_profit_q = db.query(func.sum(Trip.net_profit)).join(Order, Order.trip_id == Trip.id).filter(Order.customer_id == r.id, Trip.is_deleted == False)
-            customer_profit_q = AnalyticsService._apply_date_filter(customer_profit_q, Trip.created_at, start_date, end_date)
-            customer_profit = customer_profit_q.scalar() or 0.0
+            customer_profit = customer_profits.get(r.id, 0.0)
 
             c_stats.append({
                 "customer_id": r.id,

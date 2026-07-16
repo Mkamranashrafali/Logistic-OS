@@ -25,7 +25,10 @@ def get_dashboard_stats(
     
     kpis = analytics_service.get_dashboard_kpis(db, company_id)
     
-    recent_orders = db.query(Order).filter(
+    from sqlalchemy.orm import load_only
+    recent_orders = db.query(Order).options(
+        load_only(Order.id, Order.order_status, Order.updated_at)
+    ).filter(
         Order.company_id == company_id, 
         Order.is_deleted == False
     ).order_by(Order.created_at.desc()).limit(5).all()
