@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 
@@ -103,6 +104,14 @@ export default function LoginPage() {
           </div>
         </form>
       </CardContent>
+      <CardFooter className="flex justify-center border-t p-4">
+        <p className="text-sm text-muted-foreground">
+          Don't have an account?{" "}
+          <Link href="/signup" className="text-primary font-medium hover:underline">
+            Create one
+          </Link>
+        </p>
+      </CardFooter>
     </Card>
   );
 }
