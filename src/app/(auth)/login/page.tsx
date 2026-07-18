@@ -12,6 +12,7 @@ export default function LoginPage() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -23,7 +24,8 @@ export default function LoginPage() {
     try {
       const response = await api.post('/auth/login', {
         email,
-        password
+        password,
+        remember_me: rememberMe
       });
 
       // The api client already unwraps the response, so response IS the data object
@@ -85,9 +87,14 @@ export default function LoginPage() {
               />
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="remember" disabled={isLoading} />
+              <Checkbox 
+                id="remember" 
+                disabled={isLoading} 
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              />
               <label htmlFor="remember" className="text-sm font-medium leading-none">
-                Remember me for 30 days
+                Remember me for 7 days
               </label>
             </div>
             <Button type="submit" className="w-full mt-2" size="lg" disabled={isLoading}>

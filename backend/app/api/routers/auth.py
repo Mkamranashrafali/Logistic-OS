@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from typing import Any
 
 from app.database.session import get_db
@@ -15,7 +15,16 @@ router = APIRouter()
 
 @router.post("/login", summary="Login user")
 def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db)) -> Any:
+    print(f"DEBUG INCOMING: email={user_data.email}, remember_me={user_data.remember_me}")
     user = db.query(User).filter(User.email == user_data.email).first()
+    
+    if user_data.remember_me:
+        access_token_expires = timedelta(days=7)
+    else:
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    max_age_seconds = int(access_token_expires.total_seconds())
+    print(f"DEBUG CALCULATED: remember_me={user_data.remember_me}, expires={access_token_expires}, max_age={max_age_seconds}")
+    
     if not user or not verify_password(user_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -27,10 +36,17 @@ def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db
             detail="Inactive user"
         )
     
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    if user_data.remember_me:
+        access_token_expires = timedelta(days=7)
+    else:
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        
     access_token = create_access_token(
         subject=user.id, expires_delta=access_token_expires
     )
+    
+    max_age_seconds = int(access_token_expires.total_seconds())
+    expires_datetime = datetime.now(timezone.utc) + access_token_expires
     
     response.set_cookie(
         key="access_token",
@@ -38,7 +54,8 @@ def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db
         httponly=True,
         samesite="lax",
         secure=False,
-        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        max_age=max_age_seconds,
+        expires=expires_datetime
     )
     
     return success_response(
