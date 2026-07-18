@@ -7,6 +7,13 @@ class UserLogin(BaseModel):
     password: str
     remember_me: bool = False
 
+class CompanySignupRequest(BaseModel):
+    company_name: str
+    owner_name: str
+    email: EmailStr
+    password: str
+    confirm_password: str
+
 class UserResponse(BaseModel):
     id: str
     email: EmailStr

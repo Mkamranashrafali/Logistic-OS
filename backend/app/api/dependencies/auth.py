@@ -30,3 +30,11 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         raise HTTPException(status_code=400, detail="Inactive user")
         
     return user
+
+def get_current_company_id(current_user: User = Depends(get_current_user)) -> str:
+    if not current_user.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User does not belong to a company"
+        )
+    return current_user.company_id

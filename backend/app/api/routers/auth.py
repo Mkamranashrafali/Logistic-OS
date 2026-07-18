@@ -5,13 +5,84 @@ from typing import Any
 
 from app.database.session import get_db
 from app.models.user import User
-from app.schemas.user import UserLogin, UserResponse, Token, ChangePasswordRequest
+from app.models.company import Company
+from app.schemas.user import UserLogin, UserResponse, Token, ChangePasswordRequest, CompanySignupRequest
 from app.core.security import verify_password, create_access_token, get_password_hash
 from app.core.config import settings
 from app.api.dependencies.auth import get_current_user
 from app.core.responses import success_response
+import re
 
 router = APIRouter()
+
+def slugify(text: str) -> str:
+    text = text.lower()
+    return re.sub(r'[\W_]+', '-', text).strip('-')
+
+@router.post("/signup", summary="Company Owner Signup")
+def signup(payload: CompanySignupRequest, response: Response, db: Session = Depends(get_db)) -> Any:
+    if payload.password != payload.confirm_password:
+        raise HTTPException(status_code=400, detail="Passwords do not match")
+        
+    if len(payload.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+        
+    existing_user = db.query(User).filter(User.email == payload.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+        
+    # Create Company
+    base_slug = slugify(payload.company_name)
+    slug = base_slug
+    counter = 1
+    while db.query(Company).filter(Company.slug == slug).first():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+        
+    company = Company(
+        name=payload.company_name,
+        slug=slug,
+        is_active=True
+    )
+    db.add(company)
+    db.flush()
+    
+    # Create Owner User
+    user = User(
+        email=payload.email,
+        password_hash=get_password_hash(payload.password),
+        role="owner",
+        company_id=company.id,
+        is_active=True,
+        must_change_password=False
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    # Auto-login
+    access_token_expires = timedelta(days=7)
+    access_token = create_access_token(
+        subject=user.id, expires_delta=access_token_expires
+    )
+    
+    max_age_seconds = int(access_token_expires.total_seconds())
+    expires_datetime = datetime.now(timezone.utc) + access_token_expires
+    
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        max_age=max_age_seconds,
+        expires=expires_datetime
+    )
+    
+    return success_response(
+        message="Company created successfully", 
+        data={"user": UserResponse.model_validate(user).model_dump()}
+    )
 
 @router.post("/login", summary="Login user")
 def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db)) -> Any:
