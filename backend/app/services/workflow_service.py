@@ -61,21 +61,22 @@ class OrderWorkflowService:
         db.refresh(order)
         
         from app.services.email import email_service
+        import logging
         try:
             trip_data = {
                 "trip_id": trip.id,
                 "customer": order.customer_name if hasattr(order, 'customer_name') else "Customer",
                 "pickup": order.pickup_location,
                 "drop": order.delivery_location,
-                "vehicle": vehicle.license_plate,
-                "reporting_time": order.pickup_time.strftime("%Y-%m-%d %H:%M:%S") if hasattr(order, 'pickup_time') and order.pickup_time else "ASAP"
+                "vehicle": vehicle.plate_number if hasattr(vehicle, 'plate_number') else "N/A",
+                "reporting_time": order.expected_delivery_date.strftime("%Y-%m-%d %H:%M:%S") if getattr(order, 'expected_delivery_date', None) else "ASAP"
             }
             email_service.send_trip_assignment_email(
                 to_email=driver.email,
                 trip_data=trip_data
             )
         except Exception as e:
-            pass # Non-blocking
+            logging.getLogger(__name__).error(f"Failed to send trip assignment email: {str(e)}")
 
         return order
 
