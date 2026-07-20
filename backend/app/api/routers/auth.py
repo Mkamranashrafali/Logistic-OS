@@ -146,12 +146,13 @@ from app.schemas.user import GoogleLoginRequest
 @router.post("/google", summary="Google OAuth Login")
 def google_login(payload: GoogleLoginRequest, response: Response, db: Session = Depends(get_db)) -> Any:
     try:
+        request_session = google_requests.Request()
         idinfo = id_token.verify_oauth2_token(
             payload.credential, 
-            google_requests.Request(), 
+            request_session, 
             settings.GOOGLE_CLIENT_ID
         )
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(status_code=400, detail="Invalid Google token")
 
     if not idinfo.get("email_verified"):

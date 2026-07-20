@@ -212,7 +212,6 @@ export default function SignupPage() {
             onError={() => {
               setError("Google Signup failed");
             }}
-            useOneTap
             shape="rectangular"
             theme="outline"
             text="signup_with"
