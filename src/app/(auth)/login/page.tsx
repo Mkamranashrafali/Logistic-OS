@@ -16,6 +16,9 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [resendStatus, setResendStatus] = useState("");
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const [isResending, setIsResending] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,8 +36,34 @@ export default function LoginPage() {
       login(response.user);
     } catch (err: any) {
       setError(err.message || "An error occurred");
-    } finally {
+      } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email) return;
+    setIsResending(true);
+    setResendStatus("");
+    
+    try {
+      await api.post('/auth/resend-verification', { email });
+      setResendStatus("A new verification email has been sent.");
+      setResendCountdown(60);
+      
+      const interval = setInterval(() => {
+        setResendCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (err: any) {
+      setResendStatus(err.message || "Failed to resend. Please try again later.");
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -49,9 +78,36 @@ export default function LoginPage() {
       <CardContent>
         <form onSubmit={handleLogin}>
           <div className="grid gap-5">
-            {error && (
+            {error && !error.includes("verify your email") && (
               <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md border border-red-100">
                 {error}
+              </div>
+            )}
+
+            {error && error.includes("verify your email") && (
+              <div className="p-4 text-sm text-amber-800 bg-amber-50 rounded-md border border-amber-200 flex flex-col space-y-3">
+                <div className="font-medium">Your email is not verified.</div>
+                <div>Please verify your email before signing in.</div>
+                
+                <div className="pt-2 border-t border-amber-200/50">
+                  <p className="mb-2 text-amber-700/80">Didn't receive the email?</p>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full bg-white hover:bg-amber-100 border-amber-300 text-amber-700"
+                    onClick={handleResend}
+                    disabled={isResending || resendCountdown > 0}
+                  >
+                    {isResending ? "Sending..." : resendCountdown > 0 ? `Resend available in ${resendCountdown}s...` : "Resend Verification Email"}
+                  </Button>
+                  
+                  {resendStatus && (
+                    <div className="mt-2 text-xs font-medium text-center text-amber-700">
+                      {resendStatus}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             <div className="grid gap-2">

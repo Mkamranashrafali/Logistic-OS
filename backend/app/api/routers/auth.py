@@ -162,24 +162,48 @@ def resend_verification(payload: ResendVerificationRequest, db: Session = Depend
     user = db.query(User).filter(User.email == payload.email).first()
     
     # Do not leak whether the email exists or not
-    if not user or user.is_verified:
-        return success_response(message="If the email exists and is not verified, a new link has been sent.")
+    if not user:
+        return success_response(message="A new verification email has been sent.")
+        
+    if user.is_verified:
+        return success_response(message="Your email is already verified.")
+        
+    now = datetime.now(timezone.utc)
+    
+    # Rate Limiting
+    if user.last_verification_email_sent_at:
+        time_since_last_email = (now - user.last_verification_email_sent_at).total_seconds()
+        
+        # 1 email per 60 seconds
+        if time_since_last_email < 60:
+            raise HTTPException(status_code=429, detail="Please wait 60 seconds before requesting another email.")
+            
+        # Reset count if last email was more than 1 hour ago
+        if time_since_last_email >= 3600:
+            user.verification_email_send_count = 0
+            
+    if user.verification_email_send_count >= 5:
+        raise HTTPException(status_code=429, detail="You have reached the maximum number of resend requests for this hour. Please try again later.")
         
     raw_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
     
     user.verification_token = token_hash
-    user.verification_token_expires = datetime.now(timezone.utc) + timedelta(hours=24)
+    user.verification_token_expires = now + timedelta(hours=24)
+    user.last_verification_email_sent_at = now
+    user.verification_email_send_count += 1
     db.commit()
     
     try:
         success = email_service.send_verification_email(user.email, raw_token)
         if not success:
+            db.rollback()
             raise HTTPException(status_code=500, detail="Failed to send verification email due to an external service error.")
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     
-    return success_response(message="If the email exists and is not verified, a new link has been sent.")
+    return success_response(message="A new verification email has been sent.")
 
 @router.post("/logout", summary="Logout user")
 def logout(response: Response, current_user: User = Depends(get_current_user)) -> Any:

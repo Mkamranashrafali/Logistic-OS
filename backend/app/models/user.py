@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, ForeignKey, DateTime
+from sqlalchemy import Column, String, Boolean, ForeignKey, DateTime, Integer
 from sqlalchemy.orm import relationship
 from app.database.session import Base
 from app.models.mixins import TimestampMixin, SoftDeleteMixin
@@ -19,5 +19,9 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
     is_verified = Column(Boolean, default=False, nullable=False)
     verification_token = Column(String, nullable=True)
     verification_token_expires = Column(DateTime(timezone=True), nullable=True)
+    
+    # Email Rate Limiting
+    last_verification_email_sent_at = Column(DateTime(timezone=True), nullable=True)
+    verification_email_send_count = Column(Integer, default=0, nullable=False)
 
     company = relationship("Company", back_populates="users")
