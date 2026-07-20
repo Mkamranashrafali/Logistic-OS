@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     SMTP_EMAIL: Optional[str] = None
     SMTP_PASSWORD: Optional[str] = None
 
+    # Email Verification (Plunk)
+    PLUNK_PUBLIC_KEY: Optional[str] = None
+    PLUNK_SECRET_KEY: Optional[str] = None
+
     model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True, extra="ignore")
 
 settings = Settings()

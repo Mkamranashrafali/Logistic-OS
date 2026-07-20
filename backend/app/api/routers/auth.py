@@ -6,12 +6,15 @@ from typing import Any
 from app.database.session import get_db
 from app.models.user import User
 from app.models.company import Company
-from app.schemas.user import UserLogin, UserResponse, Token, ChangePasswordRequest, CompanySignupRequest
+from app.schemas.user import UserLogin, UserResponse, Token, ChangePasswordRequest, CompanySignupRequest, ResendVerificationRequest
 from app.core.security import verify_password, create_access_token, get_password_hash
 from app.core.config import settings
 from app.api.dependencies.auth import get_current_user
 from app.core.responses import success_response
+from app.services.email import email_service
 import re
+import secrets
+import hashlib
 
 router = APIRouter()
 
@@ -47,6 +50,9 @@ def signup(payload: CompanySignupRequest, response: Response, db: Session = Depe
     db.add(company)
     db.flush()
     
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    
     # Create Owner User
     user = User(
         email=payload.email,
@@ -54,34 +60,21 @@ def signup(payload: CompanySignupRequest, response: Response, db: Session = Depe
         role="owner",
         company_id=company.id,
         is_active=True,
-        must_change_password=False
+        must_change_password=False,
+        is_verified=False,
+        verification_token=token_hash,
+        verification_token_expires=datetime.now(timezone.utc) + timedelta(hours=24)
     )
     db.add(user)
     db.commit()
     db.refresh(user)
     
-    # Auto-login
-    access_token_expires = timedelta(days=7)
-    access_token = create_access_token(
-        subject=user.id, expires_delta=access_token_expires
-    )
-    
-    max_age_seconds = int(access_token_expires.total_seconds())
-    expires_datetime = datetime.now(timezone.utc) + access_token_expires
-    
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        samesite="lax",
-        secure=False,
-        max_age=max_age_seconds,
-        expires=expires_datetime
-    )
+    # Send verification email
+    email_service.send_verification_email(user.email, raw_token)
     
     return success_response(
-        message="Company created successfully", 
-        data={"user": UserResponse.model_validate(user).model_dump()}
+        message="Account created successfully. Please verify your email.", 
+        data={"user_id": user.id}
     )
 
 @router.post("/login", summary="Login user")
@@ -100,6 +93,11 @@ def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
+        )
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Please verify your email before logging in."
         )
     if not user.is_active:
         raise HTTPException(
@@ -133,6 +131,43 @@ def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db
         message="Login successful", 
         data={"user": UserResponse.model_validate(user).model_dump()}
     )
+
+@router.get("/verify-email", summary="Verify user email")
+def verify_email(token: str, db: Session = Depends(get_db)) -> Any:
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    user = db.query(User).filter(User.verification_token == token_hash).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid verification token")
+        
+    if user.verification_token_expires and user.verification_token_expires < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Verification token has expired")
+        
+    user.is_verified = True
+    user.verification_token = None
+    user.verification_token_expires = None
+    db.commit()
+    
+    return success_response(message="Email successfully verified")
+
+@router.post("/resend-verification", summary="Resend verification email")
+def resend_verification(payload: ResendVerificationRequest, db: Session = Depends(get_db)) -> Any:
+    user = db.query(User).filter(User.email == payload.email).first()
+    
+    # Do not leak whether the email exists or not
+    if not user or user.is_verified:
+        return success_response(message="If the email exists and is not verified, a new link has been sent.")
+        
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    
+    user.verification_token = token_hash
+    user.verification_token_expires = datetime.now(timezone.utc) + timedelta(hours=24)
+    db.commit()
+    
+    email_service.send_verification_email(user.email, raw_token)
+    
+    return success_response(message="If the email exists and is not verified, a new link has been sent.")
 
 @router.post("/logout", summary="Logout user")
 def logout(response: Response, current_user: User = Depends(get_current_user)) -> Any:

@@ -16,6 +16,8 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [resendStatus, setResendStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -30,7 +32,7 @@ export default function SignupPage() {
     }
 
     try {
-      const response = await api.post('/auth/signup', {
+      await api.post('/auth/signup', {
         company_name: companyName,
         owner_name: ownerName,
         email,
@@ -38,14 +40,52 @@ export default function SignupPage() {
         confirm_password: confirmPassword
       });
 
-      // The api client already unwraps the response, so response IS the data object
-      login(response.user);
+      setIsSuccess(true);
     } catch (err: any) {
       setError(err.message || "An error occurred during signup");
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleResend = async () => {
+    setResendStatus("Sending...");
+    try {
+      await api.post('/auth/resend-verification', { email });
+      setResendStatus("Verification email resent!");
+    } catch (err: any) {
+      setResendStatus(err.message || "Failed to resend");
+    }
+  };
+
+  if (isSuccess) {
+    return (
+      <Card className="shadow-lg border-0">
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-2xl font-bold tracking-tight text-green-600">Check your inbox</CardTitle>
+          <CardDescription className="text-muted-foreground text-base">
+            Verification email has been sent to <strong>{email}</strong>.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center space-y-4">
+          <p className="text-center text-sm text-muted-foreground">
+            Please click the link in the email to verify your account before logging in.
+          </p>
+          <Button variant="outline" onClick={handleResend} className="mt-4">
+            Resend Verification Email
+          </Button>
+          {resendStatus && (
+            <p className="text-sm text-primary font-medium">{resendStatus}</p>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-center border-t p-4">
+          <Link href="/login" className="text-primary font-medium hover:underline text-sm">
+            Return to Sign In
+          </Link>
+        </CardFooter>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-lg border-0">

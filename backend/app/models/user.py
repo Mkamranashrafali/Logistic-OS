@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, ForeignKey
+from sqlalchemy import Column, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.database.session import Base
 from app.models.mixins import TimestampMixin, SoftDeleteMixin
@@ -14,5 +14,10 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
     role = Column(String, default="user", nullable=False)
     is_active = Column(Boolean, default=True)
     must_change_password = Column(Boolean, default=False)
+    
+    # Email Verification
+    is_verified = Column(Boolean, default=False, nullable=False)
+    verification_token = Column(String, nullable=True)
+    verification_token_expires = Column(DateTime(timezone=True), nullable=True)
 
     company = relationship("Company", back_populates="users")

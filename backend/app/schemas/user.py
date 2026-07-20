@@ -30,3 +30,6 @@ class Token(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     new_password: str
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
