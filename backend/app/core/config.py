@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     PLUNK_PUBLIC_KEY: Optional[str] = None
     PLUNK_SECRET_KEY: Optional[str] = None
 
+    # Google OAuth
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+
     model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True, extra="ignore")
 
 settings = Settings()

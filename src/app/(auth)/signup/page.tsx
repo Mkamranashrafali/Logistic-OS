@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function SignupPage() {
   const { login } = useAuth();
@@ -184,6 +185,41 @@ export default function SignupPage() {
             </Button>
           </div>
         </form>
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-muted" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </div>
+        </div>
+        <div className="flex justify-center w-full">
+          <GoogleLogin
+            onSuccess={async (credentialResponse) => {
+              if (!credentialResponse.credential) return;
+              try {
+                setIsLoading(true);
+                const response = await api.post('/auth/google', { credential: credentialResponse.credential });
+                login(response.user);
+              } catch (err: any) {
+                setError(err.message || "Google Signup failed");
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            onError={() => {
+              setError("Google Signup failed");
+            }}
+            useOneTap
+            shape="rectangular"
+            theme="outline"
+            text="signup_with"
+            size="large"
+            width="100%"
+          />
+        </div>
       </CardContent>
       <CardFooter className="flex justify-center border-t p-4">
         <p className="text-sm text-muted-foreground">

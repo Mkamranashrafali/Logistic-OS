@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 interface User {
   id: string;
@@ -69,12 +70,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, updateAuthUser, isLoading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+    return (
+      <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
+        <AuthContext.Provider value={{ user, login, logout, updateAuthUser, isLoading }}>
+          {children}
+        </AuthContext.Provider>
+      </GoogleOAuthProvider>
+    );
+  }
 
 export function useAuth() {
   const context = useContext(AuthContext);

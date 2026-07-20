@@ -139,6 +139,101 @@ def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db
         data={"user": UserResponse.model_validate(user).model_dump()}
     )
 
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from app.schemas.user import GoogleLoginRequest
+
+@router.post("/google", summary="Google OAuth Login")
+def google_login(payload: GoogleLoginRequest, response: Response, db: Session = Depends(get_db)) -> Any:
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            payload.credential, 
+            google_requests.Request(), 
+            settings.GOOGLE_CLIENT_ID
+        )
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid Google token")
+
+    if not idinfo.get("email_verified"):
+        raise HTTPException(status_code=400, detail="Google email is not verified")
+
+    email = idinfo["email"]
+    google_id = idinfo["sub"]
+    name = idinfo.get("name", "")
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if user:
+        if user.role == "driver":
+            raise HTTPException(
+                status_code=403, 
+                detail="This Google account belongs to a driver account. Please sign in using your assigned email and password."
+            )
+        
+        # Existing Owner
+        if user.provider == "local":
+            user.provider = "google"
+        if not user.google_id:
+            user.google_id = google_id
+        if not user.is_verified:
+            user.is_verified = True
+        db.commit()
+    else:
+        # New Owner
+        base_slug = slugify(name or email.split('@')[0])
+        slug = base_slug
+        counter = 1
+        while db.query(Company).filter(Company.slug == slug).first():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+            
+        company = Company(
+            name=f"{name}'s Company" if name else "My Company",
+            slug=slug,
+            is_active=True
+        )
+        db.add(company)
+        db.flush()
+        
+        user = User(
+            email=email,
+            password_hash=None,
+            provider="google",
+            google_id=google_id,
+            role="owner",
+            company_id=company.id,
+            is_active=True,
+            must_change_password=False,
+            is_verified=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    # Generate JWT
+    access_token_expires = timedelta(days=7)
+    access_token = create_access_token(
+        subject=user.id, expires_delta=access_token_expires
+    )
+    
+    max_age_seconds = int(access_token_expires.total_seconds())
+    expires_datetime = datetime.now(timezone.utc) + access_token_expires
+    
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        max_age=max_age_seconds,
+        expires=expires_datetime
+    )
+    
+    return success_response(
+        message="Login successful", 
+        data={"user": UserResponse.model_validate(user).model_dump()}
+    )
+
 @router.get("/verify-email", summary="Verify user email")
 def verify_email(token: str, db: Session = Depends(get_db)) -> Any:
     token_hash = hashlib.sha256(token.encode()).hexdigest()

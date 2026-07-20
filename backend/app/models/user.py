@@ -10,7 +10,9 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     company_id = Column(String, ForeignKey("companies.id"), nullable=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    password_hash = Column(String, nullable=False)
+    password_hash = Column(String, nullable=True) # Nullable for OAuth users
+    provider = Column(String, default="local", nullable=False)
+    google_id = Column(String, unique=True, index=True, nullable=True)
     role = Column(String, default="user", nullable=False)
     is_active = Column(Boolean, default=True)
     must_change_password = Column(Boolean, default=False)
