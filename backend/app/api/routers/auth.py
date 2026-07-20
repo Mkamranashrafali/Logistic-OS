@@ -70,7 +70,14 @@ def signup(payload: CompanySignupRequest, response: Response, db: Session = Depe
     db.refresh(user)
     
     # Send verification email
-    email_service.send_verification_email(user.email, raw_token)
+    try:
+        success = email_service.send_verification_email(user.email, raw_token)
+        if not success:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Failed to send verification email due to an external service error.")
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
     
     return success_response(
         message="Account created successfully. Please verify your email.", 
@@ -165,7 +172,12 @@ def resend_verification(payload: ResendVerificationRequest, db: Session = Depend
     user.verification_token_expires = datetime.now(timezone.utc) + timedelta(hours=24)
     db.commit()
     
-    email_service.send_verification_email(user.email, raw_token)
+    try:
+        success = email_service.send_verification_email(user.email, raw_token)
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to send verification email due to an external service error.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
     return success_response(message="If the email exists and is not verified, a new link has been sent.")
 

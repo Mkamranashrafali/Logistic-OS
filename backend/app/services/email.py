@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class EmailService:
     def __init__(self):
-        self.api_url = "https://api.useplunk.com/v1/send"
+        self.api_url = "https://next-api.useplunk.com/v1/send"
         self.secret_key = settings.PLUNK_SECRET_KEY
 
     def send_email(self, to_email: str, subject: str, body: str) -> bool:
@@ -17,6 +17,7 @@ class EmailService:
             return False
 
         data = {
+            "from": settings.SMTP_EMAIL or "noreply@leadsin.im",
             "to": to_email,
             "subject": subject,
             "body": body
@@ -34,17 +35,18 @@ class EmailService:
                     return True
                 else:
                     logger.error(f"Failed to send email to {to_email}. Status code: {response.status}")
-                    return False
+                    raise ValueError(f"Plunk API failed with status {response.status}")
         except urllib.error.HTTPError as e:
             error_message = e.read().decode("utf-8")
             logger.error(f"HTTPError sending email to {to_email}: {e.code} - {error_message}")
-            return False
+            print(f"PLUNK API ERROR: {e.code} - {error_message}") # explicitly print for logs
+            raise ValueError(f"Plunk API Error: {error_message}")
         except urllib.error.URLError as e:
             logger.error(f"URLError sending email to {to_email}: {e.reason}")
-            return False
+            raise ValueError(f"Plunk URL Error: {e.reason}")
         except Exception as e:
             logger.error(f"Unexpected error sending email to {to_email}: {str(e)}")
-            return False
+            raise ValueError(f"Unexpected error: {str(e)}")
 
     def send_verification_email(self, to_email: str, token: str) -> bool:
         # Assuming frontend runs on localhost:3000 for local dev
