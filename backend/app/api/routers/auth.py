@@ -6,7 +6,7 @@ from typing import Any
 from app.database.session import get_db
 from app.models.user import User
 from app.models.company import Company
-from app.schemas.user import UserLogin, UserResponse, Token, ChangePasswordRequest, CompanySignupRequest, ResendVerificationRequest
+from app.schemas.user import UserLogin, UserResponse, Token, ChangePasswordRequest, CompanySignupRequest, ResendVerificationRequest, ForgotPasswordRequest, ResetPasswordRequest
 from app.core.security import verify_password, create_access_token, get_password_hash
 from app.core.config import settings
 from app.api.dependencies.auth import get_current_user
@@ -204,6 +204,73 @@ def resend_verification(payload: ResendVerificationRequest, db: Session = Depend
         raise HTTPException(status_code=500, detail=str(e))
     
     return success_response(message="A new verification email has been sent.")
+
+@router.post("/forgot-password", summary="Request a password reset")
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)) -> Any:
+    user = db.query(User).filter(User.email == payload.email).first()
+    
+    msg = "If an account exists, a password reset email has been sent."
+    if not user:
+        return success_response(message=msg)
+        
+    now = datetime.now(timezone.utc)
+    
+    # Rate Limiting
+    if user.last_reset_password_email_sent_at:
+        time_since_last_email = (now - user.last_reset_password_email_sent_at).total_seconds()
+        
+        # 1 email per 60 seconds
+        if time_since_last_email < 60:
+            raise HTTPException(status_code=429, detail="Please wait 60 seconds before requesting another email.")
+            
+        # Reset count if last email was more than 1 hour ago
+        if time_since_last_email >= 3600:
+            user.reset_password_email_send_count = 0
+            
+    if user.reset_password_email_send_count >= 5:
+        raise HTTPException(status_code=429, detail="You have reached the maximum number of reset requests for this hour. Please try again later.")
+        
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    
+    user.reset_password_token = token_hash
+    user.reset_password_token_expires = now + timedelta(minutes=30)
+    user.last_reset_password_email_sent_at = now
+    user.reset_password_email_send_count += 1
+    db.commit()
+    
+    try:
+        success = email_service.send_password_reset_email(user.email, raw_token)
+        if not success:
+            db.rollback()
+            raise HTTPException(status_code=500, detail="Failed to send reset email due to an external service error.")
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+        
+    return success_response(message=msg)
+
+@router.post("/reset-password", summary="Reset password using token")
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)) -> Any:
+    if len(payload.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+        
+    token_hash = hashlib.sha256(payload.token.encode()).hexdigest()
+    user = db.query(User).filter(User.reset_password_token == token_hash).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid reset token")
+        
+    now = datetime.now(timezone.utc)
+    if user.reset_password_token_expires and user.reset_password_token_expires < now:
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+        
+    user.password_hash = get_password_hash(payload.password)
+    user.reset_password_token = None
+    user.reset_password_token_expires = None
+    db.commit()
+    
+    return success_response(message="Password has been successfully reset.")
 
 @router.post("/logout", summary="Logout user")
 def logout(response: Response, current_user: User = Depends(get_current_user)) -> Any:

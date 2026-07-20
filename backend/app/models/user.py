@@ -23,5 +23,11 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
     # Email Rate Limiting
     last_verification_email_sent_at = Column(DateTime(timezone=True), nullable=True)
     verification_email_send_count = Column(Integer, default=0, nullable=False)
+    
+    # Password Reset
+    reset_password_token = Column(String, nullable=True)
+    reset_password_token_expires = Column(DateTime(timezone=True), nullable=True)
+    last_reset_password_email_sent_at = Column(DateTime(timezone=True), nullable=True)
+    reset_password_email_send_count = Column(Integer, default=0, nullable=False)
 
     company = relationship("Company", back_populates="users")

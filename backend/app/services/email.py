@@ -51,7 +51,7 @@ class EmailService:
     def send_verification_email(self, to_email: str, token: str) -> bool:
         # Assuming frontend runs on localhost:3000 for local dev
         # In a real app this should come from a config FRONTEND_URL
-        frontend_url = "http://localhost:3000"
+        frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else "http://localhost:3000"
         verification_link = f"{frontend_url}/verify-email?token={token}"
         
         subject = "Welcome to LogistiCore - Please verify your email"
@@ -67,6 +67,29 @@ class EmailService:
             <p><a href="{verification_link}">{verification_link}</a></p>
             <p>This link will expire in 24 hours.</p>
             <p>If you did not create an account, no further action is required.</p>
+        </body>
+        </html>
+        """
+        
+        return self.send_email(to_email=to_email, subject=subject, body=body)
+
+    def send_password_reset_email(self, to_email: str, token: str) -> bool:
+        frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else "http://localhost:3000"
+        reset_link = f"{frontend_url}/reset-password?token={token}"
+        
+        subject = "LogistiCore - Password Reset Request"
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2>Reset Your Password</h2>
+            <p>We received a request to reset your password. Click the link below to choose a new password:</p>
+            <p style="margin: 30px 0;">
+                <a href="{reset_link}" style="background-color: #0f172a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password</a>
+            </p>
+            <p>Or copy and paste this link into your browser:</p>
+            <p><a href="{reset_link}">{reset_link}</a></p>
+            <p>This link will expire in 30 minutes.</p>
+            <p>If you did not request a password reset, you can safely ignore this email.</p>
         </body>
         </html>
         """
