@@ -268,6 +268,14 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
     user.password_hash = get_password_hash(payload.password)
     user.reset_password_token = None
     user.reset_password_token_expires = None
+    
+    if user.role == "driver":
+        from app.models.driver import Driver
+        from app.models.enums import DriverLifecycleStatus
+        driver = db.query(Driver).filter(Driver.user_id == user.id).first()
+        if driver and driver.lifecycle_status == DriverLifecycleStatus.PENDING.value:
+            driver.lifecycle_status = DriverLifecycleStatus.ACTIVE.value
+            
     db.commit()
     
     return success_response(message="Password has been successfully reset.")

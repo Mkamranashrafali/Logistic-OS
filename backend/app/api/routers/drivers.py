@@ -52,6 +52,7 @@ def create_driver(
         role="driver",
         is_active=True,
         must_change_password=False,
+        is_verified=True,
         reset_password_token=token_hash,
         reset_password_token_expires=datetime.now(timezone.utc) + timedelta(hours=24)
     )

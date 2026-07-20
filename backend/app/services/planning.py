@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 from app.models.order import Order
-from app.models.enums import OrderStatus, DriverStatus, VehicleStatus, TripStatus
+from app.models.enums import OrderStatus, DriverStatus, VehicleStatus, TripStatus, DriverLifecycleStatus
 from app.models.driver import Driver
 from app.models.vehicle import Vehicle
 from app.models.trip import Trip
@@ -39,7 +39,8 @@ class PlanningService:
     def get_availability(db: Session, company_id: str) -> Dict[str, Any]:
         all_drivers = db.query(Driver).filter(
             Driver.company_id == company_id,
-            Driver.is_deleted == False
+            Driver.is_deleted == False,
+            Driver.lifecycle_status == DriverLifecycleStatus.ACTIVE.value
         ).all()
         
         all_vehicles = db.query(Vehicle).filter(
