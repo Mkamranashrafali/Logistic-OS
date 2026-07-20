@@ -1,9 +1,9 @@
 import uuid
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.database.session import Base
 from app.models.mixins import TimestampMixin, SoftDeleteMixin
-from app.models.enums import DriverStatus
+from app.models.enums import DriverStatus, DriverLifecycleStatus
 
 class Driver(Base, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "drivers"
@@ -19,6 +19,12 @@ class Driver(Base, TimestampMixin, SoftDeleteMixin):
     
     availability_status = Column(String, default=DriverStatus.AVAILABLE.value, nullable=False, index=True)
     current_trip_id = Column(String, ForeignKey("trips.id"), nullable=True)
+    
+    # Lifecycle
+    lifecycle_status = Column(String, default=DriverLifecycleStatus.PENDING.value, nullable=False, index=True)
+    terminated_at = Column(DateTime(timezone=True), nullable=True)
+    terminated_by = Column(String, nullable=True) # User ID who terminated
+    termination_reason = Column(String, nullable=True)
 
     company = relationship("Company", back_populates="drivers")
     orders = relationship("Order", back_populates="assigned_driver")

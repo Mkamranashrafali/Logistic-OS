@@ -59,6 +59,50 @@ export default function DriversPage() {
     }
   };
 
+  const handleSuspend = async (id: string) => {
+    if (!confirm("Are you sure you want to suspend this driver?")) return;
+    try {
+      await api.post(`/drivers/${id}/suspend`);
+      fetchDrivers();
+    } catch (err) {
+      console.error("Failed to suspend driver", err);
+      alert("Failed to suspend driver");
+    }
+  };
+
+  const handleActivate = async (id: string) => {
+    try {
+      await api.post(`/drivers/${id}/activate`);
+      fetchDrivers();
+    } catch (err) {
+      console.error("Failed to activate driver", err);
+      alert("Failed to activate driver");
+    }
+  };
+
+  const handleTerminate = async (id: string) => {
+    if (!confirm("Are you sure you want to terminate this driver? This will revoke access but preserve history.")) return;
+    try {
+      await api.post(`/drivers/${id}/terminate`);
+      fetchDrivers();
+    } catch (err) {
+      console.error("Failed to terminate driver", err);
+      alert("Failed to terminate driver");
+    }
+  };
+
+  const handleResendInvitation = async (id: string) => {
+    try {
+      await api.post(`/drivers/${id}/resend-invitation`);
+      alert("Invitation resent successfully!");
+    } catch (err: any) {
+      console.error("Failed to resend invitation", err);
+      alert(err.response?.data?.detail || "Failed to resend invitation");
+    }
+  };
+
+  const activeDrivers = drivers.filter(d => d.lifecycle_status !== 'terminated');
+
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -66,7 +110,12 @@ export default function DriversPage() {
           <h1 className="text-3xl font-bold tracking-tight">Drivers</h1>
           <p className="text-muted-foreground">Manage your fleet drivers and view performance.</p>
         </div>
-        <Button onClick={handleAdd}>Add Driver</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => window.location.href = '/drivers/former'}>
+            Former Drivers
+          </Button>
+          <Button onClick={handleAdd}>Add Driver</Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border">
@@ -83,13 +132,13 @@ export default function DriversPage() {
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : drivers.length === 0 ? (
+      ) : activeDrivers.length === 0 ? (
         <div className="text-center py-12 border rounded-xl bg-card">
           <p className="text-muted-foreground">No drivers found.</p>
         </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {drivers.map((driver) => (
+          {activeDrivers.map((driver) => (
             <Card key={driver.id} className="overflow-hidden">
               <CardHeader className="p-0">
                 <div className="h-20 bg-muted/50 w-full relative">
@@ -108,7 +157,18 @@ export default function DriversPage() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleEdit(driver)}>Edit Details</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(driver.id)}>Disable Account</DropdownMenuItem>
+                        
+                        {driver.lifecycle_status === 'pending' && (
+                          <DropdownMenuItem onClick={() => handleResendInvitation(driver.id)}>Resend Invitation</DropdownMenuItem>
+                        )}
+                        {driver.lifecycle_status === 'active' && (
+                          <DropdownMenuItem onClick={() => handleSuspend(driver.id)}>Suspend</DropdownMenuItem>
+                        )}
+                        {driver.lifecycle_status === 'suspended' && (
+                          <DropdownMenuItem onClick={() => handleActivate(driver.id)}>Activate</DropdownMenuItem>
+                        )}
+                        
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleTerminate(driver.id)}>Terminate Driver</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -120,7 +180,10 @@ export default function DriversPage() {
                     <h3 className="font-bold text-lg">{driver.name}</h3>
                     <p className="text-sm text-muted-foreground truncate w-32">{driver.id}</p>
                   </div>
-                  <StatusBadge status={driver.availability_status} />
+                  <div className="flex flex-col items-end gap-1">
+                    <StatusBadge status={driver.lifecycle_status} />
+                    {driver.lifecycle_status === 'active' && <StatusBadge status={driver.availability_status} />}
+                  </div>
                 </div>
 
                 <div className="space-y-3 mb-6">

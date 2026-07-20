@@ -23,8 +23,12 @@ class OrderWorkflowService:
         driver = db.query(Driver).filter(Driver.id == driver_id, Driver.company_id == company_id, Driver.is_deleted == False).first()
         vehicle = db.query(Vehicle).filter(Vehicle.id == vehicle_id, Vehicle.company_id == company_id, Vehicle.is_deleted == False).first()
         
+        from app.models.enums import DriverLifecycleStatus
         if not driver or driver.availability_status != DriverStatus.AVAILABLE.value:
             raise HTTPException(status_code=400, detail="Driver is not available")
+            
+        if driver.lifecycle_status != DriverLifecycleStatus.ACTIVE.value:
+            raise HTTPException(status_code=400, detail="Driver must be active to be assigned a trip")
             
         if not vehicle or vehicle.availability_status != VehicleStatus.AVAILABLE.value:
             raise HTTPException(status_code=400, detail="Vehicle is not available")
@@ -55,6 +59,24 @@ class OrderWorkflowService:
         
         db.commit()
         db.refresh(order)
+        
+        from app.services.email import email_service
+        try:
+            trip_data = {
+                "trip_id": trip.id,
+                "customer": order.customer_name if hasattr(order, 'customer_name') else "Customer",
+                "pickup": order.pickup_location,
+                "drop": order.delivery_location,
+                "vehicle": vehicle.license_plate,
+                "reporting_time": order.pickup_time.strftime("%Y-%m-%d %H:%M:%S") if hasattr(order, 'pickup_time') and order.pickup_time else "ASAP"
+            }
+            email_service.send_trip_assignment_email(
+                to_email=driver.email,
+                trip_data=trip_data
+            )
+        except Exception as e:
+            pass # Non-blocking
+
         return order
 
 class TripWorkflowService:

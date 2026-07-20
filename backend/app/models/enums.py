@@ -21,6 +21,12 @@ class DriverStatus(str, Enum):
     ON_TRIP = "on_trip"
     INACTIVE = "inactive"
 
+class DriverLifecycleStatus(str, Enum):
+    PENDING = "pending"
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    TERMINATED = "terminated"
+
 class VehicleStatus(str, Enum):
     AVAILABLE = "available"
     ASSIGNED = "assigned"

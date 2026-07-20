@@ -96,4 +96,83 @@ class EmailService:
         
         return self.send_email(to_email=to_email, subject=subject, body=body)
 
+    def send_driver_invitation_email(self, to_email: str, token: str, company_name: str, driver_name: str) -> bool:
+        frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else "http://localhost:3000"
+        reset_link = f"{frontend_url}/reset-password?token={token}"
+        
+        subject = f"Welcome to {company_name}"
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2>Hello {driver_name}</h2>
+            <p>You have been invited to join <strong>{company_name}</strong>.</p>
+            <p>Please create your password to access your driver dashboard.</p>
+            <p style="margin: 30px 0;">
+                <a href="{reset_link}" style="background-color: #0f172a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Set My Password</a>
+            </p>
+            <p>Or copy and paste this link into your browser:</p>
+            <p><a href="{reset_link}">{reset_link}</a></p>
+            <p>This token expires in 24 hours.</p>
+            <hr style="border: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #666;">
+                Company Name: {company_name}<br/>
+                Driver Email: {to_email}<br/>
+                Support Contact: support@logisticore.com
+            </p>
+        </body>
+        </html>
+        """
+        return self.send_email(to_email=to_email, subject=subject, body=body)
+
+    def send_trip_assignment_email(self, to_email: str, trip_data: dict) -> bool:
+        frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else "http://localhost:3000"
+        dashboard_link = f"{frontend_url}/driver/dashboard"
+        
+        subject = "New Trip Assigned"
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2>New Trip Assigned</h2>
+            <p>You have a new trip assignment. Please review the details below:</p>
+            
+            <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                <p><strong>Trip ID:</strong> {trip_data.get('trip_id', 'N/A')}</p>
+                <p><strong>Customer:</strong> {trip_data.get('customer', 'N/A')}</p>
+                <p><strong>Pickup:</strong> {trip_data.get('pickup', 'N/A')}</p>
+                <p><strong>Drop:</strong> {trip_data.get('drop', 'N/A')}</p>
+                <p><strong>Vehicle:</strong> {trip_data.get('vehicle', 'N/A')}</p>
+                <p><strong>Reporting Time:</strong> {trip_data.get('reporting_time', 'ASAP')}</p>
+            </div>
+            
+            <h3>Instructions & Checklist</h3>
+            <ul style="list-style-type: none; padding-left: 0;">
+                <li>✔ Fuel</li>
+                <li>✔ Tyres</li>
+                <li>✔ Documents</li>
+                <li>✔ Brakes</li>
+                <li>✔ Mobile Battery</li>
+                <li>✔ Contact dispatcher if issue</li>
+            </ul>
+            
+            <p style="margin: 30px 0;">
+                <a href="{dashboard_link}" style="background-color: #0f172a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Trip</a>
+            </p>
+        </body>
+        </html>
+        """
+        return self.send_email(to_email=to_email, subject=subject, body=body)
+
+    def send_termination_email(self, to_email: str, company_name: str, driver_name: str) -> bool:
+        subject = "Account Status Updated"
+        body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2>Hello {driver_name}</h2>
+            <p>Your access to <strong>{company_name}</strong> has been disabled.</p>
+            <p>If you believe this is a mistake, please contact your administrator.</p>
+        </body>
+        </html>
+        """
+        return self.send_email(to_email=to_email, subject=subject, body=body)
+
 email_service = EmailService()
