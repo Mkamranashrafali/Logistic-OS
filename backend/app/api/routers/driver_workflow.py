@@ -141,7 +141,9 @@ def get_driver_trips(
     from app.models.order import Order
     # Find all trips that have an order assigned to this driver
     trips = db.query(Trip).join(Order, Order.trip_id == Trip.id).filter(
-        Order.assigned_driver_id == driver.id
+        Order.assigned_driver_id == driver.id,
+        Order.is_deleted == False,
+        Trip.is_deleted == False
     ).distinct().order_by(Trip.created_at.desc()).all()
     
     return success_response(message="Trips fetched", data=[DriverTripResponse.model_validate(t).model_dump() for t in trips])

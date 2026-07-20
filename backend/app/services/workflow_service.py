@@ -65,7 +65,8 @@ class OrderWorkflowService:
         try:
             trip_data = {
                 "trip_id": trip.id,
-                "customer": order.customer_name if hasattr(order, 'customer_name') else "Customer",
+                "customer": order.customer.name if order.customer else "Customer",
+                "customer_contact": order.customer.phone if order.customer and order.customer.phone else "N/A",
                 "pickup": order.pickup_location,
                 "drop": order.delivery_location,
                 "vehicle": vehicle.plate_number if hasattr(vehicle, 'plate_number') else "N/A",

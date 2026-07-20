@@ -138,6 +138,7 @@ class EmailService:
             <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
                 <p><strong>Trip ID:</strong> {trip_data.get('trip_id', 'N/A')}</p>
                 <p><strong>Customer:</strong> {trip_data.get('customer', 'N/A')}</p>
+                <p><strong>Contact:</strong> {trip_data.get('customer_contact', 'N/A')}</p>
                 <p><strong>Pickup:</strong> {trip_data.get('pickup', 'N/A')}</p>
                 <p><strong>Drop:</strong> {trip_data.get('drop', 'N/A')}</p>
                 <p><strong>Vehicle:</strong> {trip_data.get('vehicle', 'N/A')}</p>
