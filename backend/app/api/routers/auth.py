@@ -394,8 +394,19 @@ def change_password(
     return success_response(message="Password updated successfully")
 
 @router.get("/me", summary="Get current authenticated user")
-def get_me(current_user: User = Depends(get_current_user)) -> Any:
+def get_me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Any:
+    name = current_user.email.split('@')[0].replace('.', ' ').title()
+    
+    if current_user.role == "driver":
+        from app.models.driver import Driver
+        driver = db.query(Driver).filter(Driver.user_id == current_user.id).first()
+        if driver and driver.name:
+            name = driver.name
+
+    user_data = UserResponse.model_validate(current_user).model_dump()
+    user_data["name"] = name
+
     return success_response(
         message="User profile retrieved successfully",
-        data=UserResponse.model_validate(current_user).model_dump()
+        data={"user": user_data}
     )

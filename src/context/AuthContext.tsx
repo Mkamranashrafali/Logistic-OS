@@ -10,6 +10,7 @@ interface User {
   email: string;
   role: string;
   company_id: string;
+  name?: string;
   must_change_password?: boolean;
 }
 
@@ -29,15 +30,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Actively clean up any legacy token that might be stuck in the browser
     localStorage.removeItem('token');
 
     const storedUser = localStorage.getItem('user');
-    
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
-    setIsLoading(false);
+
+    const fetchUser = async () => {
+      try {
+        const response = await api.get('/auth/me');
+        if (response && response.user) {
+          setUser(response.user);
+          localStorage.setItem('user', JSON.stringify(response.user));
+        }
+      } catch (error) {
+        console.error("Failed to fetch user from /me", error);
+        // Do not clear the user immediately, let the layout or components handle redirects.
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
   }, []);
 
   const login = (newUser: User) => {
