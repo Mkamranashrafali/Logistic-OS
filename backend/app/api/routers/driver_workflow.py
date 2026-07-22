@@ -113,6 +113,7 @@ def add_driver_expense(
     expense = Expense(
         id=str(uuid.uuid4()),
         trip_id=trip_id,
+        company_id=current_user.company_id,
         amount=payload.amount,
         category=payload.category,
         description=payload.notes,

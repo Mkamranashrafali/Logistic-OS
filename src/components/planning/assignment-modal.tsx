@@ -88,7 +88,7 @@ export function AssignmentModal({ orderId, open, onOpenChange, onAssigned }: Ass
           <div className="space-y-6 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Driver</label>
-              <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+              <Select value={selectedDriver} onValueChange={val => setSelectedDriver(val || "")}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select driver">
                     {selectedDriver ? drivers.find((d: any) => d.id === selectedDriver)?.name : "Select driver"}
@@ -116,7 +116,7 @@ export function AssignmentModal({ orderId, open, onOpenChange, onAssigned }: Ass
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Vehicle</label>
-              <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
+              <Select value={selectedVehicle} onValueChange={val => setSelectedVehicle(val || "")}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select vehicle">
                     {selectedVehicle ? vehicles.find((v: any) => v.id === selectedVehicle)?.plate_number : "Select vehicle"}

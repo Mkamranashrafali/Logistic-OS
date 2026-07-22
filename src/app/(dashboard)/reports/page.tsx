@@ -89,7 +89,7 @@ export default function ReportsPage() {
           <p className="text-muted-foreground">Comprehensive insights into operations and financials.</p>
         </div>
         <div className="flex items-center gap-4">
-          <Select value={dateRange} onValueChange={setDateRange}>
+          <Select value={dateRange} onValueChange={(val) => setDateRange(val || "7d")}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select date range" />
             </SelectTrigger>
@@ -107,7 +107,7 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val || "overview")} className="space-y-4">
         <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full lg:w-3/4">
           <TabsTrigger value="revenue">Revenue</TabsTrigger>
           <TabsTrigger value="trips">Trips</TabsTrigger>

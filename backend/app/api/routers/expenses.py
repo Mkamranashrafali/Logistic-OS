@@ -11,7 +11,7 @@ from app.services import expense_service
 
 router = APIRouter()
 
-@router.post("/", response_model=dict, summary="Create Expense")
+@router.post("", response_model=dict, summary="Create Expense")
 def create_expense(
     obj_in: ExpenseCreate,
     db: Session = Depends(get_db),
@@ -24,7 +24,7 @@ def create_expense(
         TripFinancialService.recalculate_trip_financials(db, item.trip_id)
     return success_response(message="Expense created successfully", data=ExpenseResponse.model_validate(item).model_dump())
 
-@router.get("/", response_model=dict, summary="Get all expenses")
+@router.get("", response_model=dict, summary="Get all expenses")
 def read_expenses(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),

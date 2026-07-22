@@ -11,7 +11,7 @@ from app.services import document_service
 
 router = APIRouter()
 
-@router.post("/", response_model=dict, summary="Create Document")
+@router.post("", response_model=dict, summary="Create Document")
 def create_document(
     obj_in: DocumentCreate,
     db: Session = Depends(get_db),
@@ -21,7 +21,7 @@ def create_document(
     item = document_service.create(db, obj_in=obj_in, company_id=current_user.company_id)
     return success_response(message="Document created successfully", data=DocumentResponse.model_validate(item).model_dump())
 
-@router.get("/", response_model=dict, summary="Get all documents")
+@router.get("", response_model=dict, summary="Get all documents")
 def read_documents(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),

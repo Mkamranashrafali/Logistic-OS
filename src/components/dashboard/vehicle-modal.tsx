@@ -123,7 +123,7 @@ export function VehicleModal({
             <label className="text-sm font-medium">Status</label>
             <Select 
               value={formData.availability_status} 
-              onValueChange={v => setFormData({...formData, availability_status: v})}
+              onValueChange={v => setFormData({...formData, availability_status: v || ""})}
             >
               <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
               <SelectContent>

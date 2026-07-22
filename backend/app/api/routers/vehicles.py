@@ -11,7 +11,7 @@ from app.services import vehicle_service
 
 router = APIRouter()
 
-@router.post("/", response_model=dict, summary="Create Vehicle")
+@router.post("", response_model=dict, summary="Create Vehicle")
 def create_vehicle(
     obj_in: VehicleCreate,
     db: Session = Depends(get_db),
@@ -31,7 +31,7 @@ def create_vehicle(
         from fastapi import HTTPException
         raise HTTPException(status_code=400, detail=f"Failed to create vehicle: {str(e)}")
 
-@router.get("/", response_model=dict, summary="Get all vehicles")
+@router.get("", response_model=dict, summary="Get all vehicles")
 def read_vehicles(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),

@@ -4,7 +4,7 @@ from datetime import datetime
 
 class DriverBase(BaseModel):
     name: str
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     license_number: Optional[str] = None
     phone: Optional[str] = None
     availability_status: Optional[str] = "available"

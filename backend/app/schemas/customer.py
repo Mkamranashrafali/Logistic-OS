@@ -4,7 +4,7 @@ from datetime import datetime
 
 class CustomerBase(BaseModel):
     name: str
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     phone: Optional[str] = None
     billing_address: Optional[str] = None
 
@@ -13,7 +13,7 @@ class CustomerCreate(CustomerBase):
 
 class CustomerUpdate(BaseModel):
     name: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     phone: Optional[str] = None
     billing_address: Optional[str] = None
 

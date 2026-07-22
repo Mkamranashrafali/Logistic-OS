@@ -1,33 +1,40 @@
-import { LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import * as React from "react"
+import { cn } from "@/lib/utils"
+import { FileQuestion, DivideIcon as LucideIcon } from "lucide-react"
 
-interface EmptyStateProps {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-  actionLabel?: string;
-  onAction?: () => void;
+interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
+  icon?: React.ElementType
+  title: string
+  description?: string
+  action?: React.ReactNode
 }
 
 export function EmptyState({
-  icon: Icon,
+  icon: Icon = FileQuestion,
   title,
   description,
-  actionLabel,
-  onAction,
+  action,
+  className,
+  ...props
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed p-10 text-center animate-in fade-in-50">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
-        <Icon className="h-10 w-10 text-primary" />
-      </div>
-      <h3 className="mb-2 text-xl font-semibold tracking-tight">{title}</h3>
-      <p className="mb-6 max-w-sm text-sm text-muted-foreground">
-        {description}
-      </p>
-      {actionLabel && onAction && (
-        <Button onClick={onAction}>{actionLabel}</Button>
+    <div
+      className={cn(
+        "flex min-h-[300px] flex-col items-center justify-center rounded-md border border-dashed p-8 text-center animate-in fade-in-50",
+        className
       )}
+      {...props}
+    >
+      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-muted/50">
+        <Icon className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
+      </div>
+      <h2 className="mt-6 text-xl font-semibold">{title}</h2>
+      {description && (
+        <p className="mt-2 text-center text-sm font-normal leading-6 text-muted-foreground max-w-sm">
+          {description}
+        </p>
+      )}
+      {action && <div className="mt-6">{action}</div>}
     </div>
-  );
+  )
 }

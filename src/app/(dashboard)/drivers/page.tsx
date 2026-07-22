@@ -5,13 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Search, Filter, Phone, Mail, Star, MoreVertical, Loader2 } from "lucide-react";
+import { Search, Filter, Phone, Mail, Star, MoreVertical, Loader2, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuLabel, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { api } from "@/lib/api";
+import { EmptyState } from "@/components/ui/empty-state";
 
 import { DriverModal } from "@/components/dashboard/driver-modal";
 
@@ -21,6 +25,9 @@ export default function DriversPage() {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<any>(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     fetchDrivers();
@@ -62,7 +69,7 @@ export default function DriversPage() {
   const handleDeactivate = async (id: string) => {
     if (!confirm("Are you sure you want to deactivate this driver? They will not be able to log in.")) return;
     try {
-      await api.post(`/drivers/${id}/deactivate`);
+      await api.post(`/drivers/${id}/deactivate`, {});
       fetchDrivers();
     } catch (err) {
       console.error("Failed to deactivate driver", err);
@@ -72,7 +79,7 @@ export default function DriversPage() {
 
   const handleActivate = async (id: string) => {
     try {
-      await api.post(`/drivers/${id}/activate`);
+      await api.post(`/drivers/${id}/activate`, {});
       fetchDrivers();
     } catch (err) {
       console.error("Failed to activate driver", err);
@@ -83,7 +90,7 @@ export default function DriversPage() {
   const handleArchive = async (id: string) => {
     if (!confirm("Are you sure you want to archive this driver? This will revoke access but preserve history.")) return;
     try {
-      await api.post(`/drivers/${id}/archive`);
+      await api.post(`/drivers/${id}/archive`, {});
       fetchDrivers();
     } catch (err) {
       console.error("Failed to archive driver", err);
@@ -93,7 +100,7 @@ export default function DriversPage() {
 
   const handleResendInvitation = async (id: string) => {
     try {
-      await api.post(`/drivers/${id}/resend-invitation`);
+      await api.post(`/drivers/${id}/resend-invitation`, {});
       alert("Invitation resent successfully!");
     } catch (err: any) {
       console.error("Failed to resend invitation", err);
@@ -102,6 +109,13 @@ export default function DriversPage() {
   };
 
   const activeDrivers = drivers.filter(d => d.lifecycle_status !== 'archived');
+  
+  const filteredDrivers = activeDrivers.filter((driver) => {
+    const searchStr = `${driver.name || ""} ${driver.license_number || ""}`.toLowerCase();
+    const matchesSearch = searchTerm === "" || searchStr.includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || driver.lifecycle_status === statusFilter || driver.availability_status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
@@ -118,28 +132,48 @@ export default function DriversPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search drivers by name or ID..." className="pl-9 bg-background" />
+          <Input 
+            placeholder="Search drivers by name or license..." 
+            className="pl-9 bg-background w-full"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <Button variant="outline" className="w-full sm:w-auto">
-          <Filter className="mr-2 h-4 w-4" /> Filters
-        </Button>
+        <div className="w-full sm:w-48">
+          <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || "all")}>
+            <SelectTrigger className="bg-background">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="available">Available</SelectItem>
+              <SelectItem value="on_trip">On Trip</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : activeDrivers.length === 0 ? (
-        <div className="text-center py-12 border rounded-xl bg-card">
-          <p className="text-muted-foreground">No drivers found.</p>
-        </div>
+      ) : filteredDrivers.length === 0 ? (
+        <EmptyState 
+          title="No drivers found" 
+          description={searchTerm || statusFilter !== "all" ? "No drivers match your current filters." : "You haven't added any drivers yet."} 
+          icon={Users}
+          className="bg-card"
+        />
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {activeDrivers.map((driver) => (
-            <Card key={driver.id} className="overflow-hidden">
+          {filteredDrivers.map((driver) => (
+            <Card key={driver.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
               <CardHeader className="p-0">
                 <div className="h-20 bg-muted/50 w-full relative">
                   <div className="absolute -bottom-6 left-6">
@@ -177,8 +211,8 @@ export default function DriversPage() {
               <CardContent className="pt-10 pb-6 px-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="font-bold text-lg">{driver.name}</h3>
-                    <p className="text-sm text-muted-foreground truncate w-32">{driver.id}</p>
+                    <h3 className="font-bold text-lg truncate max-w-[150px]" title={driver.name}>{driver.name}</h3>
+                    <p className="text-sm text-muted-foreground">Lic: {driver.license_number || 'N/A'}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <StatusBadge status={driver.lifecycle_status} />
@@ -187,9 +221,13 @@ export default function DriversPage() {
                 </div>
 
                 <div className="space-y-3 mb-6">
-                  <div className="flex items-center text-sm">
-                    <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <div className="flex items-center text-sm text-muted-foreground truncate" title={driver.phone}>
+                    <Phone className="h-4 w-4 mr-2 shrink-0" />
                     {driver.phone || 'N/A'}
+                  </div>
+                  <div className="flex items-center text-sm text-muted-foreground truncate" title={driver.email}>
+                    <Mail className="h-4 w-4 mr-2 shrink-0" />
+                    {driver.email || 'N/A'}
                   </div>
                 </div>
 

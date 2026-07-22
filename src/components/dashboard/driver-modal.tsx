@@ -84,7 +84,7 @@ export function DriverModal({
     setIsRestoring(true);
     setError("");
     try {
-      await api.post(`/drivers/${archivedDriverData.driver_id}/restore`);
+      await api.post(`/drivers/${archivedDriverData.driver_id}/restore`, {});
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -165,7 +165,7 @@ export function DriverModal({
             <label className="text-sm font-medium">Status</label>
             <Select 
               value={formData.availability_status} 
-              onValueChange={v => setFormData({...formData, availability_status: v})}
+              onValueChange={v => setFormData({...formData, availability_status: v || ""})}
             >
               <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
               <SelectContent>

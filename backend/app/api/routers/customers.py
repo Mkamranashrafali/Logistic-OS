@@ -11,7 +11,7 @@ from app.services import customer_service
 
 router = APIRouter()
 
-@router.post("/", response_model=dict, summary="Create Customer")
+@router.post("", response_model=dict, summary="Create Customer")
 def create_customer(
     obj_in: CustomerCreate,
     db: Session = Depends(get_db),
@@ -21,7 +21,7 @@ def create_customer(
     item = customer_service.create(db, obj_in=obj_in, company_id=current_user.company_id)
     return success_response(message="Customer created successfully", data=CustomerResponse.model_validate(item).model_dump())
 
-@router.get("/", response_model=dict, summary="Get all customers")
+@router.get("", response_model=dict, summary="Get all customers")
 def read_customers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),

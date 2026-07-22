@@ -13,7 +13,7 @@ import uuid
 
 router = APIRouter()
 
-@router.post("/", response_model=dict, summary="Create Driver")
+@router.post("", response_model=dict, summary="Create Driver")
 def create_driver(
     obj_in: DriverCreate,
     db: Session = Depends(get_db),
@@ -100,7 +100,7 @@ def create_driver(
             
         raise HTTPException(status_code=400, detail=f"Failed to create driver: {str(e)}")
 
-@router.get("/", response_model=dict, summary="Get all drivers")
+@router.get("", response_model=dict, summary="Get all drivers")
 def read_drivers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),

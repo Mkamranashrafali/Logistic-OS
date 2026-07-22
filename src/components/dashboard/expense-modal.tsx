@@ -91,7 +91,7 @@ export function ExpenseModal({
             <label className="text-sm font-medium">Trip</label>
             <Select 
               value={formData.trip_id} 
-              onValueChange={v => setFormData({...formData, trip_id: v})}
+              onValueChange={v => setFormData({...formData, trip_id: v || ""})}
               disabled={!!expense} // Normally you don't change trip after creating expense
             >
               <SelectTrigger><SelectValue placeholder="Select a trip" /></SelectTrigger>
@@ -107,7 +107,7 @@ export function ExpenseModal({
             <label className="text-sm font-medium">Category</label>
             <Select 
               value={formData.category} 
-              onValueChange={v => setFormData({...formData, category: v})}
+              onValueChange={v => setFormData({...formData, category: v || ""})}
             >
               <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
               <SelectContent>

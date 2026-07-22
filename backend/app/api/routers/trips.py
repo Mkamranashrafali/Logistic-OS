@@ -11,7 +11,7 @@ from app.services import trip_service
 
 router = APIRouter()
 
-@router.post("/", response_model=dict, summary="Create Trip")
+@router.post("", response_model=dict, summary="Create Trip")
 def create_trip(
     obj_in: TripCreate,
     db: Session = Depends(get_db),
@@ -21,7 +21,7 @@ def create_trip(
     item = trip_service.create(db, obj_in=obj_in, company_id=current_user.company_id)
     return success_response(message="Trip created successfully", data=TripResponse.model_validate(item).model_dump())
 
-@router.get("/", response_model=dict, summary="Get all trips")
+@router.get("", response_model=dict, summary="Get all trips")
 def read_trips(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),

@@ -83,7 +83,7 @@ export function DocumentModal({
             <label className="text-sm font-medium">Trip</label>
             <Select 
               value={formData.trip_id} 
-              onValueChange={v => setFormData({...formData, trip_id: v})}
+              onValueChange={v => setFormData({...formData, trip_id: v || ""})}
               disabled={!!document}
             >
               <SelectTrigger><SelectValue placeholder="Select a trip" /></SelectTrigger>

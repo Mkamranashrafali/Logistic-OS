@@ -4,16 +4,19 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Loader2, MoreHorizontal, FileText } from "lucide-react";
+import { Search, Plus, Loader2, MoreHorizontal, FileText, FolderOpen } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/api";
 import { DocumentModal } from "@/components/dashboard/document-modal";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
+  
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchDocuments = async () => {
     try {
@@ -52,6 +55,11 @@ export default function DocumentsPage() {
     }
   };
 
+  const filteredDocuments = documents.filter((doc) => {
+    const searchStr = `${doc.title || ""}`.toLowerCase();
+    return searchTerm === "" || searchStr.includes(searchTerm.toLowerCase());
+  });
+
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -62,51 +70,71 @@ export default function DocumentsPage() {
         <Button onClick={handleAdd}><Plus className="h-4 w-4 mr-2" /> Upload Document</Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search documents..." className="pl-9 bg-background" />
+          <Input 
+            placeholder="Search documents by title..." 
+            className="pl-9 bg-background w-full"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card overflow-hidden">
+      <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
+            <TableRow className="bg-muted/50">
               <TableHead>Title</TableHead>
-              <TableHead>File Path</TableHead>
-              <TableHead>Trip ID</TableHead>
-              <TableHead>Uploaded At</TableHead>
+              <TableHead>File</TableHead>
+              <TableHead>Trip Reference</TableHead>
+              <TableHead>Uploaded</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-32 text-center">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
                 </TableCell>
               </TableRow>
-            ) : documents.length === 0 ? (
+            ) : filteredDocuments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                  No documents found.
+                <TableCell colSpan={5} className="p-0">
+                  <EmptyState 
+                    title="No documents found" 
+                    description={searchTerm ? "No documents match your search." : "You haven't uploaded any documents yet."} 
+                    icon={FolderOpen}
+                    className="border-0 rounded-none bg-transparent"
+                  />
                 </TableCell>
               </TableRow>
             ) : (
-              documents.map((doc) => (
-                <TableRow key={doc.id}>
-                  <TableCell className="font-medium flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    {doc.title}
+              filteredDocuments.map((doc) => (
+                <TableRow key={doc.id} className="hover:bg-muted/50 transition-colors">
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="truncate max-w-[250px]" title={doc.title}>{doc.title}</span>
+                    </div>
                   </TableCell>
                   <TableCell>
-                    <a href={doc.file_path} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">
+                    <a href={doc.file_path} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline text-sm font-medium">
                       View File
                     </a>
                   </TableCell>
-                  <TableCell>{doc.trip_id.substring(0, 8)}</TableCell>
-                  <TableCell>{new Date(doc.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-sm">
+                    {doc.trip_id ? (
+                      <span className="font-mono text-xs bg-secondary px-2 py-1 rounded-md border">
+                        #{doc.trip_id.substring(0, 8)}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">General</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm">{new Date(doc.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">

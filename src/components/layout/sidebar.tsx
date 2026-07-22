@@ -65,17 +65,17 @@ export function Sidebar() {
       <div className="flex flex-1 flex-col gap-1">
         {currentNavigation.map((item) => {
           const isActive = pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              )}
-            >
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+                  isActive
+                    ? "bg-primary text-primary-foreground border border-primary/20 shadow-sm"
+                    : "text-muted-foreground border border-transparent hover:bg-secondary hover:text-foreground"
+                )}
+              >
               <item.icon className="h-5 w-5" />
               {item.name}
             </Link>
@@ -92,10 +92,10 @@ export function Sidebar() {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    ? "bg-primary text-primary-foreground border border-primary/20 shadow-sm"
+                    : "text-muted-foreground border border-transparent hover:bg-secondary hover:text-foreground"
                 )}
               >
                 <item.icon className="h-5 w-5" />

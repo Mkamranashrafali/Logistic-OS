@@ -7,16 +7,23 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Search, Filter, MoreHorizontal, FileText, Loader2, MapPin } from "lucide-react";
+import { Search, Filter, MoreHorizontal, Loader2, MapPin, Map } from "lucide-react";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuLabel, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { api } from "@/lib/api";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default function TripsPage() {
   const [trips, setTrips] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
     fetchTrips();
@@ -55,6 +62,13 @@ export default function TripsPage() {
     }
   };
 
+  const filteredTrips = trips.filter((trip) => {
+    const searchStr = `${trip.origin || ""} ${trip.destination || ""}`.toLowerCase();
+    const matchesSearch = searchTerm === "" || searchStr.includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || trip.trip_status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="space-y-6 animate-in fade-in-50">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -64,102 +78,123 @@ export default function TripsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border">
-        <div className="relative flex-1">
+      <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
+        <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search trips by ID or location..." className="pl-9 bg-background" />
+          <Input 
+            placeholder="Search trips by location..." 
+            className="pl-9 bg-background w-full"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)} 
+          />
         </div>
-        <Button variant="outline" className="w-full sm:w-auto">
-          <Filter className="mr-2 h-4 w-4" /> Filters
-        </Button>
+        <div className="w-full sm:w-48">
+          <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || "all")}>
+            <SelectTrigger className="bg-background">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="created">Created</SelectItem>
+              <SelectItem value="started">Started</SelectItem>
+              <SelectItem value="paused">Paused</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div className="rounded-xl border bg-card overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead>Trip ID</TableHead>
-              <TableHead>Route</TableHead>
-              <TableHead>Start Time</TableHead>
-              <TableHead>End Time</TableHead>
-              <TableHead>Distance</TableHead>
-              <TableHead>Deal Price</TableHead>
-              <TableHead>Fuel Cost</TableHead>
-              <TableHead>Other Exp.</TableHead>
-              <TableHead>Total Cost</TableHead>
-              <TableHead>Profit</TableHead>
-              <TableHead>Margin</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={13} className="h-24 text-center">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
-                </TableCell>
+      <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead>Route</TableHead>
+                <TableHead>Start Time</TableHead>
+                <TableHead>End Time</TableHead>
+                <TableHead>Distance</TableHead>
+                <TableHead>Deal Price</TableHead>
+                <TableHead>Fuel Cost</TableHead>
+                <TableHead>Other Exp.</TableHead>
+                <TableHead>Total Cost</TableHead>
+                <TableHead>Profit</TableHead>
+                <TableHead>Margin</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : trips.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={13} className="h-24 text-center text-muted-foreground">
-                  No trips found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              trips.map((trip) => (
-                <TableRow key={trip.id}>
-                  <TableCell className="font-medium">
-                    <span className="truncate w-24 inline-block">{trip.id}</span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col space-y-1">
-                      <div className="flex items-center text-xs">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
-                        <span className="truncate w-32">{trip.origin || 'N/A'}</span>
-                      </div>
-                      <div className="flex items-center text-xs">
-                        <MapPin className="h-3 w-3 mr-1 text-muted-foreground" />
-                        <span className="truncate w-32 text-muted-foreground">{trip.destination || 'N/A'}</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">{trip.start_time ? new Date(trip.start_time).toLocaleString() : 'N/A'}</TableCell>
-                  <TableCell className="text-sm">{trip.end_time ? new Date(trip.end_time).toLocaleString() : 'N/A'}</TableCell>
-                  <TableCell className="text-sm">{trip.distance_travelled ? `${trip.distance_travelled} km` : '0 km'}</TableCell>
-                  <TableCell className="text-sm font-medium text-green-600">${(trip.revenue || 0).toFixed(2)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">${(trip.fuel_cost || 0).toFixed(2)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">${(trip.other_expenses || 0).toFixed(2)}</TableCell>
-                  <TableCell className="text-sm font-medium text-red-500">${(trip.total_cost || 0).toFixed(2)}</TableCell>
-                  <TableCell className="text-sm font-medium">${(trip.net_profit || 0).toFixed(2)}</TableCell>
-                  <TableCell className="text-sm">{trip.profit_margin ? `${trip.profit_margin.toFixed(1)}%` : '0%'}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={trip.trip_status} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        {trip.trip_status !== 'completed' && (
-                          <DropdownMenuItem onClick={() => handleComplete(trip.id)}>
-                            Mark as Completed
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(trip.id)}>
-                          Delete Trip
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={12} className="h-32 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : filteredTrips.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={12} className="p-0">
+                    <EmptyState 
+                      title="No trips found" 
+                      description={searchTerm || statusFilter !== "all" ? "No trips match your current filters." : "You haven't recorded any trips yet."} 
+                      icon={Map}
+                      className="border-0 rounded-none bg-transparent"
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredTrips.map((trip) => (
+                  <TableRow key={trip.id} className="hover:bg-muted/50 transition-colors">
+                    <TableCell>
+                      <div className="flex flex-col space-y-1">
+                        <div className="flex items-center text-sm font-medium">
+                          <span className="w-2 h-2 rounded-full bg-blue-500 mr-2 shrink-0" />
+                          <span className="truncate max-w-[120px]" title={trip.origin}>{trip.origin || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <MapPin className="h-3 w-3 mr-1 shrink-0" />
+                          <span className="truncate max-w-[120px]" title={trip.destination}>{trip.destination || 'N/A'}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground/50 truncate w-24">#{trip.id.slice(0, 8)}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">{trip.start_time ? new Date(trip.start_time).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell className="text-sm">{trip.end_time ? new Date(trip.end_time).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell className="text-sm">{trip.distance_travelled ? `${trip.distance_travelled} km` : '0 km'}</TableCell>
+                    <TableCell className="text-sm font-medium text-green-600">${(trip.revenue || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">${(trip.fuel_cost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">${(trip.other_expenses || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                    <TableCell className="text-sm font-medium text-red-500">${(trip.total_cost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                    <TableCell className="text-sm font-medium">${(trip.net_profit || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                    <TableCell className="text-sm">{trip.profit_margin ? `${trip.profit_margin.toFixed(1)}%` : '0%'}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={trip.trip_status} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          {trip.trip_status !== 'completed' && (
+                            <DropdownMenuItem onClick={() => handleComplete(trip.id)}>
+                              Mark as Completed
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(trip.id)}>
+                            Delete Trip
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
