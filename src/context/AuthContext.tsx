@@ -35,24 +35,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
-    }
-
-    const fetchUser = async () => {
-      try {
-        const response = await api.get('/auth/me');
-        if (response && response.user) {
-          setUser(response.user);
-          localStorage.setItem('user', JSON.stringify(response.user));
+      
+      const fetchUser = async () => {
+        try {
+          const response = await api.get('/auth/me');
+          if (response && response.user) {
+            setUser(response.user);
+            localStorage.setItem('user', JSON.stringify(response.user));
+          }
+        } catch (error) {
+          // Silently ignore 401s on initial load so we don't trigger the Next.js dev error overlay
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Failed to fetch user from /me", error);
-        // Do not clear the user immediately, let the layout or components handle redirects.
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      };
 
-    fetchUser();
+      fetchUser();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   const login = (newUser: User) => {

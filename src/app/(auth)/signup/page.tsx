@@ -201,7 +201,10 @@ export default function SignupPage() {
               if (!credentialResponse.credential) return;
               try {
                 setIsLoading(true);
-                const response = await api.post('/auth/google', { credential: credentialResponse.credential });
+                const response = await api.post('/auth/google', { 
+                  credential: credentialResponse.credential,
+                  is_signup: true
+                });
                 login(response.user);
               } catch (err: any) {
                 setError(err.message || "Google Signup failed");

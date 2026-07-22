@@ -164,22 +164,10 @@ def google_login(payload: GoogleLoginRequest, response: Response, db: Session = 
 
     user = db.query(User).filter(User.email == email).first()
 
-    if user:
-        if user.role == "driver":
-            raise HTTPException(
-                status_code=403, 
-                detail="This Google account belongs to a driver account. Please sign in using your assigned email and password."
-            )
-        
-        # Existing Owner
-        if user.provider == "local":
-            user.provider = "google"
-        if not user.google_id:
-            user.google_id = google_id
-        if not user.is_verified:
-            user.is_verified = True
-        db.commit()
-    else:
+    if payload.is_signup:
+        if user:
+            raise HTTPException(status_code=400, detail="Account already exists. Please sign in.")
+            
         # New Owner
         base_slug = slugify(name or email.split('@')[0])
         slug = base_slug
@@ -208,6 +196,22 @@ def google_login(payload: GoogleLoginRequest, response: Response, db: Session = 
             is_verified=True,
         )
         db.add(user)
+        db.commit()
+        db.refresh(user)
+    else:
+        if not user:
+            raise HTTPException(
+                status_code=403, 
+                detail="No driver account exists for this Google account."
+            )
+            
+        # Existing User (Owner or Driver)
+        if user.provider == "local":
+            user.provider = "google"
+        if not user.google_id:
+            user.google_id = google_id
+        if not user.is_verified:
+            user.is_verified = True
         db.commit()
         db.refresh(user)
 

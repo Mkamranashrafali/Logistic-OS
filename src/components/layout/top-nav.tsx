@@ -1,8 +1,7 @@
 "use client";
 
-import { Search, Menu, User as UserIcon, Settings, LogOut } from "lucide-react";
+import { Menu, User as UserIcon, Settings, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -43,14 +42,6 @@ export function TopNav() {
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle menu</span>
         </Button>
-        <div className="relative hidden w-64 md:block">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="w-full bg-secondary pl-9 outline-none border-none focus-visible:ring-1 focus-visible:ring-primary"
-          />
-        </div>
       </div>
 
       <div className="flex items-center gap-4">

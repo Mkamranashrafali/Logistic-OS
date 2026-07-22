@@ -25,8 +25,16 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
   if (response.status === 401) {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const currentPath = window.location.pathname;
+      const isAuthRoute = currentPath.startsWith('/login') || 
+                          currentPath.startsWith('/signup') || 
+                          currentPath.startsWith('/forgot-password') ||
+                          currentPath.startsWith('/reset-password');
+                          
+      if (!isAuthRoute) {
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
   }
 

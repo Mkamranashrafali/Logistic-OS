@@ -18,6 +18,7 @@ class UserResponse(BaseModel):
     id: str
     email: EmailStr
     role: str
+    company_id: Optional[str] = None
     is_active: bool
     must_change_password: Optional[bool] = False
     created_at: datetime
@@ -43,3 +44,4 @@ class ResetPasswordRequest(BaseModel):
 
 class GoogleLoginRequest(BaseModel):
     credential: str
+    is_signup: bool = False
