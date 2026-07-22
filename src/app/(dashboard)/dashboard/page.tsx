@@ -23,10 +23,12 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const statsData = await api.get('/dashboard/stats');
+        const [statsData, revenueTrend] = await Promise.all([
+          api.get('/dashboard/stats'),
+          api.get('/analytics/revenue')
+        ]);
+        
         setStats(statsData);
-
-        const revenueTrend = await api.get('/analytics/revenue');
         
         // Format revenue trend for recharts
         const formattedChartData = (revenueTrend || []).map((item: any) => ({

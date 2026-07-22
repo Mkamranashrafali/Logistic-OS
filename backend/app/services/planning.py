@@ -20,6 +20,7 @@ class PlanningService:
 
     @staticmethod
     def _get_next_available_date(db: Session, resource_type: str, resource_id: str) -> Optional[datetime]:
+        # Deprecated: Kept for backwards compatibility if used elsewhere.
         query = db.query(Order).join(Trip, Order.trip_id == Trip.id).filter(
             Trip.trip_status == TripStatus.STARTED.value,
             Trip.is_deleted == False,
@@ -48,11 +49,31 @@ class PlanningService:
             Vehicle.is_deleted == False
         ).all()
 
+        # Bulk fetch active orders to prevent N+1 query problem
+        active_orders = db.query(
+            Order.assigned_driver_id,
+            Order.assigned_vehicle_id,
+            Order.expected_delivery_date
+        ).join(Trip, Order.trip_id == Trip.id).filter(
+            Trip.company_id == company_id,
+            Trip.trip_status == TripStatus.STARTED.value,
+            Trip.is_deleted == False,
+            Order.is_deleted == False
+        ).all()
+
+        driver_dates = {}
+        vehicle_dates = {}
+        for o in active_orders:
+            if o.assigned_driver_id and o.expected_delivery_date:
+                driver_dates[o.assigned_driver_id] = o.expected_delivery_date
+            if o.assigned_vehicle_id and o.expected_delivery_date:
+                vehicle_dates[o.assigned_vehicle_id] = o.expected_delivery_date
+
         drivers_data = []
         for d in all_drivers:
             next_date = None
             if d.availability_status != DriverStatus.AVAILABLE.value:
-                next_date = PlanningService._get_next_available_date(db, 'driver', d.id)
+                next_date = driver_dates.get(d.id)
             drivers_data.append({
                 "id": d.id,
                 "name": d.name,
@@ -64,7 +85,7 @@ class PlanningService:
         for v in all_vehicles:
             next_date = None
             if v.availability_status != VehicleStatus.AVAILABLE.value:
-                next_date = PlanningService._get_next_available_date(db, 'vehicle', v.id)
+                next_date = vehicle_dates.get(v.id)
             vehicles_data.append({
                 "id": v.id,
                 "plate_number": v.plate_number,

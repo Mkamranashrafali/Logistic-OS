@@ -110,19 +110,21 @@ class TripWorkflowService:
         
         # Update associated orders
         orders = db.query(Order).filter(Order.trip_id == trip.id).all()
+        
+        driver_ids = [o.assigned_driver_id for o in orders if o.assigned_driver_id]
+        vehicle_ids = [o.assigned_vehicle_id for o in orders if o.assigned_vehicle_id]
+
+        if driver_ids:
+            db.query(Driver).filter(Driver.id.in_(driver_ids)).update(
+                {"availability_status": DriverStatus.ON_TRIP.value}, synchronize_session=False
+            )
+        if vehicle_ids:
+            db.query(Vehicle).filter(Vehicle.id.in_(vehicle_ids)).update(
+                {"availability_status": VehicleStatus.ON_TRIP.value}, synchronize_session=False
+            )
+
         for order in orders:
             order.order_status = OrderStatus.IN_TRANSIT.value
-            
-            # Update driver and vehicle statuses securely via the first linked order
-            # (Assuming 1 trip = 1 driver/vehicle pair for this MVP logic)
-            if order.assigned_driver_id:
-                driver = db.query(Driver).get(order.assigned_driver_id)
-                if driver:
-                    driver.availability_status = DriverStatus.ON_TRIP.value
-            if order.assigned_vehicle_id:
-                vehicle = db.query(Vehicle).get(order.assigned_vehicle_id)
-                if vehicle:
-                    vehicle.availability_status = VehicleStatus.ON_TRIP.value
                     
         db.commit()
         db.refresh(trip)
@@ -147,20 +149,23 @@ class TripWorkflowService:
         trip.end_time = datetime.now(timezone.utc)
         
         orders = db.query(Order).filter(Order.trip_id == trip.id).all()
+        
+        driver_ids = [o.assigned_driver_id for o in orders if o.assigned_driver_id]
+        vehicle_ids = [o.assigned_vehicle_id for o in orders if o.assigned_vehicle_id]
+
+        if driver_ids:
+            db.query(Driver).filter(Driver.id.in_(driver_ids)).update(
+                {"availability_status": DriverStatus.AVAILABLE.value, "current_trip_id": None}, 
+                synchronize_session=False
+            )
+        if vehicle_ids:
+            db.query(Vehicle).filter(Vehicle.id.in_(vehicle_ids)).update(
+                {"availability_status": VehicleStatus.AVAILABLE.value, "current_trip_id": None}, 
+                synchronize_session=False
+            )
+
         for order in orders:
             order.order_status = OrderStatus.DELIVERED.value
-            
-            # Free up resources
-            if order.assigned_driver_id:
-                driver = db.query(Driver).get(order.assigned_driver_id)
-                if driver:
-                    driver.availability_status = DriverStatus.AVAILABLE.value
-                    driver.current_trip_id = None
-            if order.assigned_vehicle_id:
-                vehicle = db.query(Vehicle).get(order.assigned_vehicle_id)
-                if vehicle:
-                    vehicle.availability_status = VehicleStatus.AVAILABLE.value
-                    vehicle.current_trip_id = None
                     
         db.commit()
         db.refresh(trip)
