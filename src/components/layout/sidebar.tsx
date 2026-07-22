@@ -36,12 +36,11 @@ const navigation = [
 
 const secondaryNavigation = [
   { name: "Settings", href: "/settings", icon: Settings },
-  { name: "Logout", href: "#", icon: LogOut, action: "logout" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const isDriver = user?.role === 'driver';
 
@@ -84,32 +83,28 @@ export function Sidebar() {
         })}
       </div>
 
-      <div className="flex flex-col gap-1 pt-6 border-t">
-        {secondaryNavigation.filter(item => isDriver ? item.action === "logout" : true).map((item) => {
-          const isActive = pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isActive && item.action !== "logout"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              )}
-              onClick={(e) => {
-                if (item.action === "logout") {
-                  e.preventDefault();
-                  logout();
-                }
-              }}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.name}
-            </Link>
-          );
-        })}
-      </div>
+      {!isDriver && (
+        <div className="flex flex-col gap-1 pt-6 border-t">
+          {secondaryNavigation.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                {item.name}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
