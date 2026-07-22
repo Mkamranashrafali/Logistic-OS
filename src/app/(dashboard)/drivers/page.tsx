@@ -59,14 +59,14 @@ export default function DriversPage() {
     }
   };
 
-  const handleSuspend = async (id: string) => {
-    if (!confirm("Are you sure you want to suspend this driver?")) return;
+  const handleDeactivate = async (id: string) => {
+    if (!confirm("Are you sure you want to deactivate this driver? They will not be able to log in.")) return;
     try {
-      await api.post(`/drivers/${id}/suspend`);
+      await api.post(`/drivers/${id}/deactivate`);
       fetchDrivers();
     } catch (err) {
-      console.error("Failed to suspend driver", err);
-      alert("Failed to suspend driver");
+      console.error("Failed to deactivate driver", err);
+      alert("Failed to deactivate driver");
     }
   };
 
@@ -80,14 +80,14 @@ export default function DriversPage() {
     }
   };
 
-  const handleTerminate = async (id: string) => {
-    if (!confirm("Are you sure you want to terminate this driver? This will revoke access but preserve history.")) return;
+  const handleArchive = async (id: string) => {
+    if (!confirm("Are you sure you want to archive this driver? This will revoke access but preserve history.")) return;
     try {
-      await api.post(`/drivers/${id}/terminate`);
+      await api.post(`/drivers/${id}/archive`);
       fetchDrivers();
     } catch (err) {
-      console.error("Failed to terminate driver", err);
-      alert("Failed to terminate driver");
+      console.error("Failed to archive driver", err);
+      alert("Failed to archive driver");
     }
   };
 
@@ -101,7 +101,7 @@ export default function DriversPage() {
     }
   };
 
-  const activeDrivers = drivers.filter(d => d.lifecycle_status !== 'terminated');
+  const activeDrivers = drivers.filter(d => d.lifecycle_status !== 'archived');
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
@@ -111,8 +111,8 @@ export default function DriversPage() {
           <p className="text-muted-foreground">Manage your fleet drivers and view performance.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => window.location.href = '/drivers/former'}>
-            Former Drivers
+          <Button variant="outline" onClick={() => window.location.href = '/drivers/archived'}>
+            Archived Drivers
           </Button>
           <Button onClick={handleAdd}>Add Driver</Button>
         </div>
@@ -162,13 +162,13 @@ export default function DriversPage() {
                           <DropdownMenuItem onClick={() => handleResendInvitation(driver.id)}>Resend Invitation</DropdownMenuItem>
                         )}
                         {driver.lifecycle_status === 'active' && (
-                          <DropdownMenuItem onClick={() => handleSuspend(driver.id)}>Suspend</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDeactivate(driver.id)}>Deactivate</DropdownMenuItem>
                         )}
-                        {driver.lifecycle_status === 'suspended' && (
+                        {driver.lifecycle_status === 'inactive' && (
                           <DropdownMenuItem onClick={() => handleActivate(driver.id)}>Activate</DropdownMenuItem>
                         )}
                         
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleTerminate(driver.id)}>Terminate Driver</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleArchive(driver.id)}>Archive Driver</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>

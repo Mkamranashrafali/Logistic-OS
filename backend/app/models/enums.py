@@ -24,8 +24,8 @@ class DriverStatus(str, Enum):
 class DriverLifecycleStatus(str, Enum):
     PENDING = "pending"
     ACTIVE = "active"
-    SUSPENDED = "suspended"
-    TERMINATED = "terminated"
+    INACTIVE = "inactive"
+    ARCHIVED = "archived"
 
 class VehicleStatus(str, Enum):
     AVAILABLE = "available"

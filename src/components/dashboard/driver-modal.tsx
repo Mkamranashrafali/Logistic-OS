@@ -29,6 +29,9 @@ export function DriverModal({
     availability_status: "available",
   });
 
+  const [archivedDriverData, setArchivedDriverData] = useState<any>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+
   useEffect(() => {
     if (driver) {
       setFormData({
@@ -48,6 +51,7 @@ export function DriverModal({
       });
     }
     setError("");
+    setArchivedDriverData(null);
   }, [driver, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,9 +69,28 @@ export function DriverModal({
       onSuccess();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Failed to save driver");
+      if (err.response?.status === 409 && err.response?.data?.is_archived) {
+        setArchivedDriverData(err.response.data);
+      } else {
+        setError(err.response?.data?.detail || err.message || "Failed to save driver");
+      }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    if (!archivedDriverData?.driver_id) return;
+    setIsRestoring(true);
+    setError("");
+    try {
+      await api.post(`/drivers/${archivedDriverData.driver_id}/restore`);
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Failed to restore driver");
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -77,6 +100,29 @@ export function DriverModal({
         <DialogHeader>
           <DialogTitle>{driver ? "Edit Driver" : "Add Driver"}</DialogTitle>
         </DialogHeader>
+        
+        {archivedDriverData ? (
+          <div className="space-y-4 py-4">
+            {error && <div className="text-sm text-red-500 bg-red-50 p-2 rounded">{error}</div>}
+            <div className="p-4 bg-amber-50 text-amber-900 border border-amber-200 rounded-md">
+              <h4 className="font-medium text-lg mb-2">Archived Driver Found</h4>
+              <p className="text-sm">
+                This email address belongs to a driver in your archived records. 
+                Would you like to restore their previous profile instead? 
+                This will reactivate their account and preserve all historical trips and expenses.
+              </p>
+            </div>
+            <DialogFooter className="flex sm:justify-end gap-2 mt-4">
+              <Button type="button" variant="outline" onClick={() => setArchivedDriverData(null)} disabled={isRestoring}>
+                Use Different Email
+              </Button>
+              <Button type="button" onClick={handleRestore} disabled={isRestoring}>
+                {isRestoring && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Restore Existing Profile
+              </Button>
+            </DialogFooter>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && <div className="text-sm text-red-500 bg-red-50 p-2 rounded">{error}</div>}
           <div className="space-y-2">
@@ -139,6 +185,7 @@ export function DriverModal({
             </Button>
           </DialogFooter>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );

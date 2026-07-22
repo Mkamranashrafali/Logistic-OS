@@ -9,6 +9,14 @@ from app.api.routers import auth, health
 from app.api.routers import drivers, vehicles, customers, trips, orders, expenses, documents
 from app.database.session import engine, Base
 
+# Apply IPv4 patch to prevent 21-second connection timeouts on Windows
+import socket
+old_getaddrinfo = socket.getaddrinfo
+def new_getaddrinfo(*args, **kwargs):
+    responses = old_getaddrinfo(*args, **kwargs)
+    return [response for response in responses if response[0] == socket.AF_INET]
+socket.getaddrinfo = new_getaddrinfo
+
 # NOTE: For production with Alembic, we generally don't call create_all here.
 # But keeping it for immediate local sqlite testing if alembic isn't run.
 # Base.metadata.create_all(bind=engine)

@@ -219,7 +219,6 @@ export default function SignupPage() {
             theme="outline"
             text="signup_with"
             size="large"
-            width="100%"
           />
         </div>
       </CardContent>

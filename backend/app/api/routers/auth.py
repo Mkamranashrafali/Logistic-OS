@@ -111,6 +111,21 @@ def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Inactive user"
         )
+        
+    if user.role == "driver":
+        from app.models.driver import Driver
+        driver = db.query(Driver).filter(Driver.user_id == user.id).first()
+        if driver:
+            if driver.lifecycle_status == "inactive":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Your account is currently inactive. Please contact your company administrator."
+                )
+            if driver.lifecycle_status == "archived":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Your employment with this company has ended. Please contact your company administrator if you believe this is an error."
+                )
     
     if user_data.remember_me:
         access_token_expires = timedelta(days=7)
@@ -143,13 +158,15 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from app.schemas.user import GoogleLoginRequest
 
+# Global session to cache certificates in memory and prevent duplicate fetches
+_google_request_session = google_requests.Request()
+
 @router.post("/google", summary="Google OAuth Login")
 def google_login(payload: GoogleLoginRequest, response: Response, db: Session = Depends(get_db)) -> Any:
     try:
-        request_session = google_requests.Request()
         idinfo = id_token.verify_oauth2_token(
             payload.credential, 
-            request_session, 
+            _google_request_session, 
             settings.GOOGLE_CLIENT_ID
         )
     except ValueError as e:
@@ -206,6 +223,21 @@ def google_login(payload: GoogleLoginRequest, response: Response, db: Session = 
             )
             
         # Existing User (Owner or Driver)
+        if user.role == "driver":
+            from app.models.driver import Driver
+            driver = db.query(Driver).filter(Driver.user_id == user.id).first()
+            if driver:
+                if driver.lifecycle_status == "inactive":
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Your account is currently inactive. Please contact your company administrator."
+                    )
+                if driver.lifecycle_status == "archived":
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Your employment with this company has ended. Please contact your company administrator if you believe this is an error."
+                    )
+                    
         if user.provider == "local":
             user.provider = "google"
         if not user.google_id:

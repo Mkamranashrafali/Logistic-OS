@@ -4,6 +4,8 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 
+import { GoogleProvider } from "@/context/GoogleProvider";
+
 export const metadata: Metadata = {
   title: "LogistiCore | Modern Logistics OS",
   description: "Cloud-based Logistics Operating System for modern logistics companies.",
@@ -19,9 +21,11 @@ export default function RootLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
       >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <GoogleProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </GoogleProvider>
       </body>
     </html>
   );

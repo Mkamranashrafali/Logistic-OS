@@ -23,16 +23,21 @@ def create_driver(
         from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Driver must have an email address to create a login account.")
     
-    from fastapi import HTTPException
-    # Check if user with email already exists
+    from app.models.driver import Driver
+    from app.models.enums import DriverLifecycleStatus
+    existing_driver = db.query(Driver).filter(Driver.email == obj_in.email).first()
+    if existing_driver:
+        if existing_driver.lifecycle_status == DriverLifecycleStatus.ARCHIVED.value:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=409, 
+                content={"detail": "An archived driver with this email already exists.", "is_archived": True, "driver_id": existing_driver.id}
+            )
+        raise HTTPException(status_code=400, detail="A driver with this email already exists.")
+
     existing_user = db.query(User).filter(User.email == obj_in.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="A user with this email already exists.")
-
-    from app.models.driver import Driver
-    existing_driver = db.query(Driver).filter(Driver.email == obj_in.email).first()
-    if existing_driver:
-        raise HTTPException(status_code=400, detail="A driver with this email already exists.")
 
     import secrets
     import hashlib
@@ -100,10 +105,18 @@ def read_drivers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     include_deleted: bool = Query(False),
+    lifecycle_status: str = Query(None, description="Filter by lifecycle status"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    items = driver_service.get_multi(db, skip=skip, limit=limit, company_id=current_user.company_id, include_deleted=include_deleted)
+    from app.models.driver import Driver
+    query = db.query(Driver).filter(Driver.company_id == current_user.company_id)
+    if not include_deleted:
+        query = query.filter(Driver.is_deleted == False)
+    if lifecycle_status:
+        query = query.filter(Driver.lifecycle_status == lifecycle_status)
+        
+    items = query.offset(skip).limit(limit).all()
     data = [DriverResponse.model_validate(item).model_dump() for item in items]
     return success_response(message="Retrieved drivers successfully", data=data)
 
@@ -197,8 +210,8 @@ def resend_driver_invitation(
         
     return success_response(message="Invitation sent successfully")
 
-@router.post("/{id}/suspend", summary="Suspend Driver")
-def suspend_driver(
+@router.post("/{id}/deactivate", summary="Deactivate Driver")
+def deactivate_driver(
     id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -211,17 +224,17 @@ def suspend_driver(
     if not driver or driver.company_id != current_user.company_id:
         raise HTTPException(status_code=404, detail="Driver not found")
         
-    if driver.lifecycle_status == DriverLifecycleStatus.TERMINATED.value:
-        raise HTTPException(status_code=400, detail="Cannot suspend a terminated driver")
+    if driver.lifecycle_status == DriverLifecycleStatus.ARCHIVED.value:
+        raise HTTPException(status_code=400, detail="Cannot deactivate an archived driver")
         
-    driver.lifecycle_status = DriverLifecycleStatus.SUSPENDED.value
+    driver.lifecycle_status = DriverLifecycleStatus.INACTIVE.value
     
     user = db.query(User).filter(User.id == driver.user_id).first()
     if user:
         user.is_active = False # Block login
         
     db.commit()
-    return success_response(message="Driver suspended successfully")
+    return success_response(message="Driver deactivated successfully")
 
 @router.post("/{id}/activate", summary="Activate Driver")
 def activate_driver(
@@ -237,8 +250,8 @@ def activate_driver(
     if not driver or driver.company_id != current_user.company_id:
         raise HTTPException(status_code=404, detail="Driver not found")
         
-    if driver.lifecycle_status == DriverLifecycleStatus.TERMINATED.value:
-        raise HTTPException(status_code=400, detail="Cannot activate a terminated driver")
+    if driver.lifecycle_status == DriverLifecycleStatus.ARCHIVED.value:
+        raise HTTPException(status_code=400, detail="Cannot activate an archived driver")
         
     driver.lifecycle_status = DriverLifecycleStatus.ACTIVE.value
     
@@ -250,8 +263,8 @@ def activate_driver(
     db.commit()
     return success_response(message="Driver activated successfully")
 
-@router.post("/{id}/terminate", summary="Terminate Driver")
-def terminate_driver(
+@router.post("/{id}/archive", summary="Archive Driver")
+def archive_driver(
     id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -267,10 +280,10 @@ def terminate_driver(
     if not driver or driver.company_id != current_user.company_id:
         raise HTTPException(status_code=404, detail="Driver not found")
         
-    if driver.lifecycle_status == DriverLifecycleStatus.TERMINATED.value:
-        return success_response(message="Driver is already terminated")
+    if driver.lifecycle_status == DriverLifecycleStatus.ARCHIVED.value:
+        return success_response(message="Driver is already archived")
         
-    driver.lifecycle_status = DriverLifecycleStatus.TERMINATED.value
+    driver.lifecycle_status = DriverLifecycleStatus.ARCHIVED.value
     driver.terminated_at = datetime.now(timezone.utc)
     driver.terminated_by = current_user.id
     
@@ -291,4 +304,57 @@ def terminate_driver(
     except Exception as e:
         pass # Don't block termination on email failure
         
-    return success_response(message="Driver terminated successfully")
+    return success_response(message="Driver archived successfully")
+
+@router.post("/{id}/restore", summary="Restore Archived Driver")
+def restore_driver(
+    id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    from app.models.driver import Driver
+    from app.models.enums import DriverLifecycleStatus
+    from app.models.company import Company
+    from app.services.email import email_service
+    from fastapi import HTTPException
+    import secrets
+    import hashlib
+    from datetime import datetime, timezone, timedelta
+    
+    driver = db.query(Driver).filter(Driver.id == id, Driver.is_deleted == False).first()
+    if not driver or driver.company_id != current_user.company_id:
+        raise HTTPException(status_code=404, detail="Driver not found")
+        
+    if driver.lifecycle_status != DriverLifecycleStatus.ARCHIVED.value:
+        raise HTTPException(status_code=400, detail="Can only restore archived drivers")
+        
+    driver.lifecycle_status = DriverLifecycleStatus.ACTIVE.value
+    
+    user = db.query(User).filter(User.id == driver.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Driver user account not found")
+        
+    now = datetime.now(timezone.utc)
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    
+    user.is_active = True
+    user.reset_password_token = token_hash
+    user.reset_password_token_expires = now + timedelta(hours=24)
+    user.last_reset_password_email_sent_at = now
+    
+    db.commit()
+    
+    company = db.query(Company).filter(Company.id == current_user.company_id).first()
+    
+    try:
+        email_service.send_driver_invitation_email(
+            to_email=driver.email,
+            token=raw_token,
+            company_name=company.name if company else "Our Company",
+            driver_name=driver.name
+        )
+    except Exception as e:
+        pass # Don't block restoration on email failure
+        
+    return success_response(message="Driver restored successfully and invitation sent")
