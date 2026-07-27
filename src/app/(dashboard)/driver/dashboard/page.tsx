@@ -21,7 +21,7 @@ export default function DriverDashboardPage() {
   const [expenseCategory, setExpenseCategory] = useState("Toll");
   const [expenseAmount, setExpenseAmount] = useState("");
   const [expenseNotes, setExpenseNotes] = useState("");
-  
+
   const EXPENSE_CATEGORIES = ["Fuel", "Toll", "Parking", "Loading", "Unloading", "Repair", "Food", "Hotel", "Fine", "Delivery Proof", "Other"];
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function DriverDashboardPage() {
     try {
       const tripsData = await api.get('/driver/trips');
       setTrips(tripsData || []);
-      
+
       const activitiesData = await api.get('/driver/activities');
       setActivities(activitiesData || []);
     } catch (err) {
@@ -65,7 +65,7 @@ export default function DriverDashboardPage() {
   const handleExpenseSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeTrip || isSubmitting) return;
-    
+
     setIsSubmitting(true);
     try {
       await api.post('/driver/expenses', {
@@ -126,7 +126,7 @@ export default function DriverDashboardPage() {
                   </div>
                   <StatusBadge status={activeTrip.trip_status} />
                 </div>
-                
+
                 <div className="pt-4 border-t flex flex-wrap gap-2">
                   {activeTrip.trip_status === 'created' && (
                     <Button disabled={tripActionLoading} onClick={() => handleTripAction('start', activeTrip.id)}>
@@ -152,7 +152,7 @@ export default function DriverDashboardPage() {
                     <span className="text-sm text-muted-foreground font-medium">Trip Completed</span>
                   )}
                 </div>
-                
+
                 {/* Additional Actions */}
                 {activeTrip.trip_status === 'started' || activeTrip.trip_status === 'PAUSED' ? (
                   <div className="pt-4 border-t flex flex-wrap gap-2">
@@ -167,9 +167,9 @@ export default function DriverDashboardPage() {
                         <form onSubmit={handleExpenseSubmit} className="space-y-4">
                           <div className="grid gap-2">
                             <Label>Category</Label>
-                            <select 
+                            <select
                               className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                              value={expenseCategory} 
+                              value={expenseCategory}
                               onChange={e => setExpenseCategory(e.target.value)}
                             >
                               {EXPENSE_CATEGORIES.map(cat => (
@@ -177,7 +177,7 @@ export default function DriverDashboardPage() {
                               ))}
                             </select>
                           </div>
-                          
+
                           {expenseCategory !== "Delivery Proof" && (
                             <div className="grid gap-2">
                               <Label>Amount ($)</Label>

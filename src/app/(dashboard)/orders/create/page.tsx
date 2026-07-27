@@ -14,7 +14,7 @@ export default function CreateOrderPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [customers, setCustomers] = useState<any[]>([]);
-  
+
   // Form State
   const [customerId, setCustomerId] = useState("");
   const [deliveryDate, setDeliveryDate] = useState("");
@@ -82,7 +82,7 @@ export default function CreateOrderPage() {
                 {error}
               </div>
             )}
-            
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Customer</label>

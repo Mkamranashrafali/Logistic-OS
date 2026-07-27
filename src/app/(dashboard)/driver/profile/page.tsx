@@ -76,7 +76,7 @@ export default function DriverProfilePage() {
               </div>
             </div>
           </div>
-          
+
           {profile.assigned_vehicle && (
             <div className="mt-8 pt-6 border-t">
               <h3 className="text-lg font-medium mb-4 flex items-center gap-2">

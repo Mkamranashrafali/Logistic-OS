@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Search, Filter, MoreHorizontal, Plus, Loader2, Package } from "lucide-react";
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuLabel, DropdownMenuTrigger 
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -23,7 +23,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [customerMap, setCustomerMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -37,15 +37,15 @@ export default function OrdersPage() {
         api.get('/orders'),
         api.get('/customers')
       ]);
-      
+
       setOrders(ordersData || []);
-      
+
       const cMap: Record<string, string> = {};
       (customersData || []).forEach((c: any) => {
         cMap[c.id] = c.name;
       });
       setCustomerMap(cMap);
-      
+
     } catch (err) {
       console.error("Failed to fetch data", err);
     } finally {
@@ -67,10 +67,10 @@ export default function OrdersPage() {
   const filteredOrders = orders.filter((order) => {
     const customerName = customerMap[order.customer_id] || "Unknown Customer";
     const searchStr = `${customerName} ${order.pickup_location || ""} ${order.delivery_location || ""}`.toLowerCase();
-    
+
     const matchesSearch = searchTerm === "" || searchStr.includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || order.order_status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -89,9 +89,9 @@ export default function OrdersPage() {
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search by customer or location..." 
-            className="pl-9 bg-background w-full" 
+          <Input
+            placeholder="Search by customer or location..."
+            className="pl-9 bg-background w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -135,9 +135,9 @@ export default function OrdersPage() {
             ) : filteredOrders.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="p-0">
-                  <EmptyState 
-                    title="No orders found" 
-                    description={searchTerm || statusFilter !== "all" ? "No orders match your current filters." : "You haven't created any orders yet."} 
+                  <EmptyState
+                    title="No orders found"
+                    description={searchTerm || statusFilter !== "all" ? "No orders match your current filters." : "You haven't created any orders yet."}
                     icon={Package}
                     className="border-0 rounded-none bg-transparent"
                   />
@@ -164,9 +164,9 @@ export default function OrdersPage() {
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </DropdownMenuTrigger>
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(order.id)}>

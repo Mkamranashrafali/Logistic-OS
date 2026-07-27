@@ -39,7 +39,7 @@ class EmailService:
         except urllib.error.HTTPError as e:
             error_message = e.read().decode("utf-8")
             logger.error(f"HTTPError sending email to {to_email}: {e.code} - {error_message}")
-            print(f"PLUNK API ERROR: {e.code} - {error_message}") # explicitly print for logs
+            logger.error(f"PLUNK API ERROR: {e.code} - {error_message}") # explicitly log
             raise ValueError(f"Plunk API Error: {error_message}")
         except urllib.error.URLError as e:
             logger.error(f"URLError sending email to {to_email}: {e.reason}")
@@ -49,9 +49,7 @@ class EmailService:
             raise ValueError(f"Unexpected error: {str(e)}")
 
     def send_verification_email(self, to_email: str, token: str) -> bool:
-        # Assuming frontend runs on localhost:3000 for local dev
-        # In a real app this should come from a config FRONTEND_URL
-        frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else "http://localhost:3000"
+        frontend_url = settings.FRONTEND_URL.rstrip('/')
         verification_link = f"{frontend_url}/verify-email?token={token}"
         
         subject = "Welcome to LogistiCore - Please verify your email"
@@ -74,7 +72,7 @@ class EmailService:
         return self.send_email(to_email=to_email, subject=subject, body=body)
 
     def send_password_reset_email(self, to_email: str, token: str) -> bool:
-        frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else "http://localhost:3000"
+        frontend_url = settings.FRONTEND_URL.rstrip('/')
         reset_link = f"{frontend_url}/reset-password?token={token}"
         
         subject = "LogistiCore - Password Reset Request"
@@ -97,7 +95,7 @@ class EmailService:
         return self.send_email(to_email=to_email, subject=subject, body=body)
 
     def send_driver_invitation_email(self, to_email: str, token: str, company_name: str, driver_name: str) -> bool:
-        frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else "http://localhost:3000"
+        frontend_url = settings.FRONTEND_URL.rstrip('/')
         reset_link = f"{frontend_url}/reset-password?token={token}"
         
         subject = f"Welcome to {company_name}"
@@ -125,7 +123,7 @@ class EmailService:
         return self.send_email(to_email=to_email, subject=subject, body=body)
 
     def send_trip_assignment_email(self, to_email: str, trip_data: dict) -> bool:
-        frontend_url = settings.FRONTEND_URL if hasattr(settings, 'FRONTEND_URL') else "http://localhost:3000"
+        frontend_url = settings.FRONTEND_URL.rstrip('/')
         dashboard_link = f"{frontend_url}/driver/dashboard"
         
         subject = "New Trip Assigned"

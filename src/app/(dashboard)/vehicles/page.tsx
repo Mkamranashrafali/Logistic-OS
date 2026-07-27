@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Search, Filter, MoreHorizontal, FileText, Wrench, Loader2, Truck } from "lucide-react";
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuLabel, DropdownMenuTrigger 
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -85,8 +85,8 @@ export default function VehiclesPage() {
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search vehicles by plate or model..." 
+          <Input
+            placeholder="Search vehicles by plate or model..."
             className="pl-9 bg-background w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -129,9 +129,9 @@ export default function VehiclesPage() {
             ) : filteredVehicles.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="p-0">
-                  <EmptyState 
-                    title="No vehicles found" 
-                    description={searchTerm || statusFilter !== "all" ? "No vehicles match your current filters." : "You haven't added any vehicles yet."} 
+                  <EmptyState
+                    title="No vehicles found"
+                    description={searchTerm || statusFilter !== "all" ? "No vehicles match your current filters." : "You haven't added any vehicles yet."}
                     icon={Truck}
                     className="border-0 rounded-none bg-transparent"
                   />
@@ -157,9 +157,9 @@ export default function VehiclesPage() {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </DropdownMenuTrigger>
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleEdit(vehicle)}>
@@ -178,7 +178,7 @@ export default function VehiclesPage() {
         </Table>
       </div>
 
-      <VehicleModal 
+      <VehicleModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchVehicles}

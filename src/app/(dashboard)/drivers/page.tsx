@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Search, Filter, Phone, Mail, Star, MoreVertical, Loader2, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuLabel, DropdownMenuTrigger 
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -22,7 +22,7 @@ import { DriverModal } from "@/components/dashboard/driver-modal";
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<any>(null);
 
@@ -109,7 +109,7 @@ export default function DriversPage() {
   };
 
   const activeDrivers = drivers.filter(d => d.lifecycle_status !== 'archived');
-  
+
   const filteredDrivers = activeDrivers.filter((driver) => {
     const searchStr = `${driver.name || ""} ${driver.license_number || ""}`.toLowerCase();
     const matchesSearch = searchTerm === "" || searchStr.includes(searchTerm.toLowerCase());
@@ -135,8 +135,8 @@ export default function DriversPage() {
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search drivers by name or license..." 
+          <Input
+            placeholder="Search drivers by name or license..."
             className="pl-9 bg-background w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -164,9 +164,9 @@ export default function DriversPage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : filteredDrivers.length === 0 ? (
-        <EmptyState 
-          title="No drivers found" 
-          description={searchTerm || statusFilter !== "all" ? "No drivers match your current filters." : "You haven't added any drivers yet."} 
+        <EmptyState
+          title="No drivers found"
+          description={searchTerm || statusFilter !== "all" ? "No drivers match your current filters." : "You haven't added any drivers yet."}
           icon={Users}
           className="bg-card"
         />
@@ -185,13 +185,13 @@ export default function DriversPage() {
                   <div className="absolute top-4 right-4">
                     <DropdownMenu>
                       <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0 bg-background/50 hover:bg-background/80">
-                          <span className="sr-only">Open menu</span>
-                          <MoreVertical className="h-4 w-4" />
-                        </DropdownMenuTrigger>
+                        <span className="sr-only">Open menu</span>
+                        <MoreVertical className="h-4 w-4" />
+                      </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleEdit(driver)}>Edit Details</DropdownMenuItem>
-                        
+
                         {driver.lifecycle_status === 'pending' && (
                           <DropdownMenuItem onClick={() => handleResendInvitation(driver.id)}>Resend Invitation</DropdownMenuItem>
                         )}
@@ -201,7 +201,7 @@ export default function DriversPage() {
                         {driver.lifecycle_status === 'inactive' && (
                           <DropdownMenuItem onClick={() => handleActivate(driver.id)}>Activate</DropdownMenuItem>
                         )}
-                        
+
                         <DropdownMenuItem className="text-destructive" onClick={() => handleArchive(driver.id)}>Archive Driver</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -249,7 +249,7 @@ export default function DriversPage() {
         </div>
       )}
 
-      <DriverModal 
+      <DriverModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchDrivers}

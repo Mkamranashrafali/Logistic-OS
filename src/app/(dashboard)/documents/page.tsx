@@ -15,7 +15,7 @@ export default function DocumentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<any>(null);
-  
+
   const [searchTerm, setSearchTerm] = useState("");
 
   const fetchDocuments = async () => {
@@ -73,8 +73,8 @@ export default function DocumentsPage() {
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search documents by title..." 
+          <Input
+            placeholder="Search documents by title..."
             className="pl-9 bg-background w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -103,9 +103,9 @@ export default function DocumentsPage() {
             ) : filteredDocuments.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="p-0">
-                  <EmptyState 
-                    title="No documents found" 
-                    description={searchTerm ? "No documents match your search." : "You haven't uploaded any documents yet."} 
+                  <EmptyState
+                    title="No documents found"
+                    description={searchTerm ? "No documents match your search." : "You haven't uploaded any documents yet."}
                     icon={FolderOpen}
                     className="border-0 rounded-none bg-transparent"
                   />
@@ -155,7 +155,7 @@ export default function DocumentsPage() {
         </Table>
       </div>
 
-      <DocumentModal 
+      <DocumentModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchDocuments}

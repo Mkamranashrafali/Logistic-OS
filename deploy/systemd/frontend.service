@@ -1,0 +1,27 @@
+[Unit]
+Description=Logistics OS Next.js Frontend
+After=network.target
+
+[Service]
+# IMPORTANT: Change this user to your VPS username (e.g., ubuntu)
+User=ubuntu
+# IMPORTANT: Update this path to where your project is cloned
+WorkingDirectory=/home/ubuntu/Logistic-OS
+
+# Environment Setup
+Environment=NODE_ENV=production
+# Optional: Set port if not using 3000
+# Environment=PORT=3000
+
+# Start Command
+ExecStart=/usr/bin/npm run start
+
+# Restart Policy
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=logistic-os-frontend
+
+[Install]
+WantedBy=multi-user.target

@@ -80,8 +80,8 @@ export default function ExpensesPage() {
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search expenses by description..." 
+          <Input
+            placeholder="Search expenses by description..."
             className="pl-9 bg-background w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -126,9 +126,9 @@ export default function ExpensesPage() {
             ) : filteredExpenses.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="p-0">
-                  <EmptyState 
-                    title="No expenses found" 
-                    description={searchTerm || categoryFilter !== "all" ? "No expenses match your current filters." : "You haven't recorded any expenses yet."} 
+                  <EmptyState
+                    title="No expenses found"
+                    description={searchTerm || categoryFilter !== "all" ? "No expenses match your current filters." : "You haven't recorded any expenses yet."}
                     icon={Receipt}
                     className="border-0 rounded-none bg-transparent"
                   />
@@ -153,7 +153,7 @@ export default function ExpensesPage() {
                     <span className="capitalize text-sm">{expense.category || 'N/A'}</span>
                   </TableCell>
                   <TableCell className="font-medium text-sm">
-                    ${parseFloat(expense.amount || "0").toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    ${parseFloat(expense.amount || "0").toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </TableCell>
                   <TableCell className="text-sm">
                     {expense.date ? new Date(expense.date).toLocaleDateString() : 'N/A'}
@@ -181,7 +181,7 @@ export default function ExpensesPage() {
         </Table>
       </div>
 
-      <ExpenseModal 
+      <ExpenseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchExpenses}

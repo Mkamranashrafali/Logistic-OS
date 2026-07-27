@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Search, Filter, MoreHorizontal, Loader2, MapPin, Map } from "lucide-react";
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuLabel, DropdownMenuTrigger 
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -21,7 +21,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 export default function TripsPage() {
   const [trips, setTrips] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -81,11 +81,11 @@ export default function TripsPage() {
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search trips by location..." 
+          <Input
+            placeholder="Search trips by location..."
             className="pl-9 bg-background w-full"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)} 
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="w-full sm:w-48">
@@ -134,9 +134,9 @@ export default function TripsPage() {
               ) : filteredTrips.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={12} className="p-0">
-                    <EmptyState 
-                      title="No trips found" 
-                      description={searchTerm || statusFilter !== "all" ? "No trips match your current filters." : "You haven't recorded any trips yet."} 
+                    <EmptyState
+                      title="No trips found"
+                      description={searchTerm || statusFilter !== "all" ? "No trips match your current filters." : "You haven't recorded any trips yet."}
                       icon={Map}
                       className="border-0 rounded-none bg-transparent"
                     />
@@ -161,11 +161,11 @@ export default function TripsPage() {
                     <TableCell className="text-sm">{trip.start_time ? new Date(trip.start_time).toLocaleDateString() : 'N/A'}</TableCell>
                     <TableCell className="text-sm">{trip.end_time ? new Date(trip.end_time).toLocaleDateString() : 'N/A'}</TableCell>
                     <TableCell className="text-sm">{trip.distance_travelled ? `${trip.distance_travelled} km` : '0 km'}</TableCell>
-                    <TableCell className="text-sm font-medium text-green-600">${(trip.revenue || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">${(trip.fuel_cost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">${(trip.other_expenses || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
-                    <TableCell className="text-sm font-medium text-red-500">${(trip.total_cost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
-                    <TableCell className="text-sm font-medium">${(trip.net_profit || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</TableCell>
+                    <TableCell className="text-sm font-medium text-green-600">${(trip.revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">${(trip.fuel_cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">${(trip.other_expenses || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell className="text-sm font-medium text-red-500">${(trip.total_cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell className="text-sm font-medium">${(trip.net_profit || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                     <TableCell className="text-sm">{trip.profit_margin ? `${trip.profit_margin.toFixed(1)}%` : '0%'}</TableCell>
                     <TableCell>
                       <StatusBadge status={trip.trip_status} />
@@ -173,9 +173,9 @@ export default function TripsPage() {
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </DropdownMenuTrigger>
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           {trip.trip_status !== 'completed' && (

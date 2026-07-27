@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import { Search, Filter, MoreHorizontal, FileText, Phone, Mail, Loader2, Building2 } from "lucide-react";
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuLabel, DropdownMenuTrigger 
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { api } from "@/lib/api";
 import { CustomerModal } from "@/components/dashboard/customer-modal";
@@ -78,8 +78,8 @@ export default function CustomersPage() {
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search customers by company or name..." 
+          <Input
+            placeholder="Search customers by company or name..."
             className="pl-9 bg-background w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -107,9 +107,9 @@ export default function CustomersPage() {
             ) : filteredCustomers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="p-0">
-                  <EmptyState 
-                    title="No customers found" 
-                    description={searchTerm ? "No customers match your search." : "You haven't added any customers yet."} 
+                  <EmptyState
+                    title="No customers found"
+                    description={searchTerm ? "No customers match your search." : "You haven't added any customers yet."}
                     icon={Building2}
                     className="border-0 rounded-none bg-transparent"
                   />
@@ -142,9 +142,9 @@ export default function CustomersPage() {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </DropdownMenuTrigger>
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleEdit(customer)}>
@@ -163,7 +163,7 @@ export default function CustomersPage() {
         </Table>
       </div>
 
-      <CustomerModal 
+      <CustomerModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchCustomers}

@@ -6,10 +6,15 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
 
-    # Supabase Settings
-    SUPABASE_URL: str = ""
-    SUPABASE_ANON_KEY: str = ""
-    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    # URLs & CORS
+    FRONTEND_URL: str
+    BACKEND_URL: str
+    API_BASE_URL: str
+    ALLOWED_ORIGINS: str
+
+    # Cookies
+    COOKIE_DOMAIN: str
+    COOKIE_SECURE: bool = True
 
     # Database
     DATABASE_URL: str
@@ -19,19 +24,18 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    # SMTP Email (Optional for now)
+    # SMTP Email (Required for production sender)
     SMTP_HOST: Optional[str] = None
     SMTP_PORT: Optional[int] = None
-    SMTP_EMAIL: Optional[str] = None
+    SMTP_EMAIL: str
     SMTP_PASSWORD: Optional[str] = None
 
     # Email Verification (Plunk)
-    PLUNK_PUBLIC_KEY: Optional[str] = None
-    PLUNK_SECRET_KEY: Optional[str] = None
+    PLUNK_SECRET_KEY: str
 
     # Google OAuth
-    GOOGLE_CLIENT_ID: Optional[str] = None
-    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    GOOGLE_CLIENT_ID: str
+    GOOGLE_CLIENT_SECRET: str
 
     model_config = SettingsConfigDict(env_file=".env", env_ignore_empty=True, extra="ignore")
 

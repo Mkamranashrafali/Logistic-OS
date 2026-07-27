@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
-      
+
       const fetchUser = async () => {
         try {
           const response = await api.get('/auth/me');
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = (newUser: User) => {
     localStorage.setItem('user', JSON.stringify(newUser));
     setUser(newUser);
-    
+
     if (newUser.must_change_password) {
       router.push('/change-password');
     } else if (newUser.role === 'driver') {
@@ -84,12 +84,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
-    return (
-      <AuthContext.Provider value={{ user, login, logout, updateAuthUser, isLoading }}>
-        {children}
-      </AuthContext.Provider>
-    );
-  }
+  return (
+    <AuthContext.Provider value={{ user, login, logout, updateAuthUser, isLoading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
 
 export function useAuth() {
   const context = useContext(AuthContext);

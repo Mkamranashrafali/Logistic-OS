@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Loader2, Route, Clock, Navigation } from "lucide-react";
@@ -131,11 +131,11 @@ export default function PlanningQueuePage() {
         </CardContent>
       </Card>
 
-      <AssignmentModal 
-        orderId={assignOrderId} 
-        open={isModalOpen} 
-        onOpenChange={setIsModalOpen} 
-        onAssigned={handleAssigned} 
+      <AssignmentModal
+        orderId={assignOrderId}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onAssigned={handleAssigned}
       />
     </div>
   );

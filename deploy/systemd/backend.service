@@ -1,0 +1,27 @@
+[Unit]
+Description=Logistics OS FastAPI Backend
+After=network.target
+
+[Service]
+# IMPORTANT: Change this user to your VPS username (e.g., ubuntu)
+User=ubuntu
+# IMPORTANT: Update this path to where your project is cloned
+WorkingDirectory=/home/ubuntu/Logistic-OS/backend
+
+# Environment variables from .env file
+EnvironmentFile=/home/ubuntu/Logistic-OS/backend/.env
+# Pass path to Gunicorn executable inside virtual environment
+Environment="PATH=/home/ubuntu/Logistic-OS/backend/venv/bin"
+
+# Start Command using Gunicorn config
+ExecStart=/home/ubuntu/Logistic-OS/backend/venv/bin/gunicorn -c /home/ubuntu/Logistic-OS/deploy/gunicorn_conf.py app.main:app
+
+# Restart Policy
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=logistic-os-backend
+
+[Install]
+WantedBy=multi-user.target

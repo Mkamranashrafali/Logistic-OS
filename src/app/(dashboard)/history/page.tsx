@@ -14,7 +14,7 @@ export default function HistoryPage() {
   const [completedTrips, setCompletedTrips] = useState<any[]>([]);
   const [terminatedDrivers, setTerminatedDrivers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [tripSearch, setTripSearch] = useState("");
   const [driverSearch, setDriverSearch] = useState("");
 
@@ -62,12 +62,12 @@ export default function HistoryPage() {
           <TabsTrigger value="trips">Completed Trips</TabsTrigger>
           <TabsTrigger value="drivers">Inactive Drivers</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="trips" className="mt-6 space-y-4">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search past trips by location..." 
+            <Input
+              placeholder="Search past trips by location..."
               className="pl-9 bg-background"
               value={tripSearch}
               onChange={(e) => setTripSearch(e.target.value)}
@@ -79,9 +79,9 @@ export default function HistoryPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : filteredTrips.length === 0 ? (
-            <EmptyState 
-              title="No past trips found" 
-              description={tripSearch ? "No trips match your search." : "You haven't completed any trips yet."} 
+            <EmptyState
+              title="No past trips found"
+              description={tripSearch ? "No trips match your search." : "You haven't completed any trips yet."}
               icon={HistoryIcon}
               className="bg-card"
             />
@@ -117,8 +117,8 @@ export default function HistoryPage() {
         <TabsContent value="drivers" className="mt-6 space-y-4">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search inactive drivers..." 
+            <Input
+              placeholder="Search inactive drivers..."
               className="pl-9 bg-background"
               value={driverSearch}
               onChange={(e) => setDriverSearch(e.target.value)}
@@ -130,9 +130,9 @@ export default function HistoryPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : filteredDrivers.length === 0 ? (
-            <EmptyState 
-              title="No inactive drivers found" 
-              description={driverSearch ? "No drivers match your search." : "You have no archived or deleted drivers."} 
+            <EmptyState
+              title="No inactive drivers found"
+              description={driverSearch ? "No drivers match your search." : "You have no archived or deleted drivers."}
               icon={UserX}
               className="bg-card"
             />

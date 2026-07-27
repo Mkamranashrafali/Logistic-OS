@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Download, Loader2 } from "lucide-react";
-import { 
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import { api } from "@/lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,11 +28,11 @@ export default function ReportsPage() {
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      
+
       let startDateStr = "";
       const now = new Date();
       if (dateRange === "today") {
-        now.setHours(0,0,0,0);
+        now.setHours(0, 0, 0, 0);
         startDateStr = now.toISOString();
       } else if (dateRange === "7days") {
         now.setDate(now.getDate() - 7);
@@ -42,7 +42,7 @@ export default function ReportsPage() {
         startDateStr = now.toISOString();
       } else if (dateRange === "month") {
         now.setDate(1);
-        now.setHours(0,0,0,0);
+        now.setHours(0, 0, 0, 0);
         startDateStr = now.toISOString();
       }
 
@@ -116,7 +116,7 @@ export default function ReportsPage() {
           <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
           <TabsTrigger value="customers">Customers</TabsTrigger>
         </TabsList>
-        
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -247,11 +247,10 @@ export default function ReportsPage() {
                       <div key={v.vehicle_id} className="p-4 border rounded-lg flex flex-col justify-between">
                         <div>
                           <h4 className="font-semibold">{v.license_plate}</h4>
-                          <span className={`inline-block mt-1 px-2 py-1 text-xs rounded-full ${
-                            v.status === 'available' ? 'bg-success/10 text-success' : 
-                            v.status === 'on_trip' ? 'bg-primary/10 text-primary' : 
-                            'bg-destructive/10 text-destructive'
-                          }`}>
+                          <span className={`inline-block mt-1 px-2 py-1 text-xs rounded-full ${v.status === 'available' ? 'bg-success/10 text-success' :
+                              v.status === 'on_trip' ? 'bg-primary/10 text-primary' :
+                                'bg-destructive/10 text-destructive'
+                            }`}>
                             {v.status.replace('_', ' ').toUpperCase()}
                           </span>
                         </div>

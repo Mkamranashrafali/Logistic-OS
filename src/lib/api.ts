@@ -1,4 +1,7 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL as string;
+if (!API_BASE_URL) {
+  console.warn("NEXT_PUBLIC_API_URL is missing! Requests will likely fail.");
+}
 
 export class ApiError extends Error {
   public status: number;

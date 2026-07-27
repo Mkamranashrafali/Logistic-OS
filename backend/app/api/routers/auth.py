@@ -86,15 +86,8 @@ def signup(payload: CompanySignupRequest, response: Response, db: Session = Depe
 
 @router.post("/login", summary="Login user")
 def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db)) -> Any:
-    print(f"DEBUG INCOMING: email={user_data.email}, remember_me={user_data.remember_me}")
+
     user = db.query(User).filter(User.email == user_data.email).first()
-    
-    if user_data.remember_me:
-        access_token_expires = timedelta(days=7)
-    else:
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    max_age_seconds = int(access_token_expires.total_seconds())
-    print(f"DEBUG CALCULATED: remember_me={user_data.remember_me}, expires={access_token_expires}, max_age={max_age_seconds}")
     
     if not user or not verify_password(user_data.password, user.password_hash):
         raise HTTPException(
@@ -144,7 +137,8 @@ def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db
         value=access_token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=settings.COOKIE_SECURE,
+        domain=settings.COOKIE_DOMAIN or None,
         max_age=max_age_seconds,
         expires=expires_datetime
     )
@@ -261,7 +255,8 @@ def google_login(payload: GoogleLoginRequest, response: Response, db: Session = 
         value=access_token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=settings.COOKIE_SECURE,
+        domain=settings.COOKIE_DOMAIN or None,
         max_age=max_age_seconds,
         expires=expires_datetime
     )
@@ -414,7 +409,13 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
 
 @router.post("/logout", summary="Logout user")
 def logout(response: Response, current_user: User = Depends(get_current_user)) -> Any:
-    response.delete_cookie("access_token")
+    response.delete_cookie(
+        "access_token", 
+        domain=settings.COOKIE_DOMAIN or None, 
+        secure=settings.COOKIE_SECURE, 
+        httponly=True, 
+        samesite="lax"
+    )
     return success_response(message="Successfully logged out")
 
 @router.post("/change-password", summary="Change password on first login")

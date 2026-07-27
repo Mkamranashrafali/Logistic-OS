@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { 
-  Package, Map, CheckCircle2, AlertCircle, 
-  Users, Truck, DollarSign, Fuel, Plus, FileText, Loader2 
+import {
+  Package, Map, CheckCircle2, AlertCircle,
+  Users, Truck, DollarSign, Fuel, Plus, FileText, Loader2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { StatisticsCard } from "@/components/dashboard/statistics-card";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend 
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
 import Link from "next/link";
 import { api } from "@/lib/api";
@@ -27,16 +27,16 @@ export default function DashboardPage() {
           api.get('/dashboard/stats'),
           api.get('/analytics/revenue')
         ]);
-        
+
         setStats(statsData);
-        
+
         // Format revenue trend for recharts
         const formattedChartData = (revenueTrend || []).map((item: any) => ({
           name: new Date(item.date).toLocaleDateString('default', { month: 'short', day: 'numeric' }),
           revenue: item.revenue,
           expenses: item.expenses
         }));
-        
+
         setChartData(formattedChartData);
 
       } catch (err) {
@@ -75,28 +75,28 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatisticsCard 
-          title="Orders Waiting Assignment" value={stats?.orders?.planning || 0} icon={Package} 
+        <StatisticsCard
+          title="Orders Waiting Assignment" value={stats?.orders?.planning || 0} icon={Package}
           description="Needs planning & resource allocation"
         />
-        <StatisticsCard 
-          title="Drivers Busy" value={stats?.drivers?.active || 0} icon={Users} 
+        <StatisticsCard
+          title="Drivers Busy" value={stats?.drivers?.active || 0} icon={Users}
           description={`Available: ${stats?.drivers?.available || 0} | Total: ${stats?.drivers?.total || 0}`}
         />
-        <StatisticsCard 
-          title="Vehicles Busy" value={stats?.vehicles?.active || 0} icon={Truck} 
+        <StatisticsCard
+          title="Vehicles Busy" value={stats?.vehicles?.active || 0} icon={Truck}
           description={`Available: ${stats?.vehicles?.available || 0} | Maintenance: ${stats?.vehicles?.maintenance || 0}`}
         />
-        <StatisticsCard 
-          title="Revenue (Month)" value={`$${(stats?.revenue?.month || 0).toFixed(2)}`} icon={DollarSign} 
+        <StatisticsCard
+          title="Revenue (Month)" value={`$${(stats?.revenue?.month || 0).toFixed(2)}`} icon={DollarSign}
           description={`Today: $${(stats?.revenue?.today || 0).toFixed(2)} | Week: $${(stats?.revenue?.week || 0).toFixed(2)}`}
         />
-        <StatisticsCard 
-          title="Total Orders" value={stats?.orders?.total || 0} icon={Package} 
+        <StatisticsCard
+          title="Total Orders" value={stats?.orders?.total || 0} icon={Package}
           description={`Pending: ${stats?.orders?.pending || 0} | Delivered: ${stats?.orders?.delivered || 0}`}
         />
-        <StatisticsCard 
-          title="Active Trips" value={stats?.trips?.active || 0} icon={Map} 
+        <StatisticsCard
+          title="Active Trips" value={stats?.trips?.active || 0} icon={Map}
           description={`Completed: ${stats?.trips?.completed || 0} total trips`}
         />
       </div>
