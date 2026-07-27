@@ -9,7 +9,7 @@ echo "============================================="
 
 # 1. Update Code
 echo "[1/4] Pulling latest code..."
-git pull origin main
+git pull origin v1
 
 # 2. Setup/Update Backend
 echo "[2/4] Updating backend environment..."
