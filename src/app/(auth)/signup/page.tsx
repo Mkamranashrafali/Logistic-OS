@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import { GoogleLogin } from '@react-oauth/google';
+import { useCallback } from "react";
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 
 export default function SignupPage() {
   const { login } = useAuth();
@@ -196,8 +197,9 @@ export default function SignupPage() {
           </div>
         </div>
         <div className="flex justify-center w-full">
-          <GoogleLogin
-            onSuccess={async (credentialResponse) => {
+          <GoogleAuthButton
+            isLoading={isLoading}
+            onSuccess={useCallback(async (credentialResponse: any) => {
               if (!credentialResponse.credential) return;
               try {
                 setIsLoading(true);
@@ -211,14 +213,11 @@ export default function SignupPage() {
               } finally {
                 setIsLoading(false);
               }
-            }}
-            onError={() => {
+            }, [login])}
+            onError={useCallback(() => {
               setError("Google Signup failed");
-            }}
-            shape="rectangular"
-            theme="outline"
+            }, [])}
             text="signup_with"
-            size="large"
           />
         </div>
       </CardContent>

@@ -8,7 +8,8 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
-import { GoogleLogin } from '@react-oauth/google';
+import { useCallback } from "react";
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -172,8 +173,9 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="flex justify-center w-full">
-          <GoogleLogin
-            onSuccess={async (credentialResponse) => {
+          <GoogleAuthButton
+            isLoading={isLoading}
+            onSuccess={useCallback(async (credentialResponse: any) => {
               if (!credentialResponse.credential) return;
               try {
                 setIsLoading(true);
@@ -187,14 +189,11 @@ export default function LoginPage() {
               } finally {
                 setIsLoading(false);
               }
-            }}
-            onError={() => {
+            }, [login])}
+            onError={useCallback(() => {
               setError("Google Login failed");
-            }}
-            shape="rectangular"
-            theme="outline"
+            }, [])}
             text="continue_with"
-            size="large"
           />
         </div>
       </CardContent>
