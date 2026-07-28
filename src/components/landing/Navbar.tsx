@@ -56,7 +56,7 @@ export function Navbar() {
     >
       <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/home" className="flex items-center gap-2 group">
+        <Link href="/" className="flex items-center gap-2 group">
           <div className="bg-primary text-primary-foreground p-1.5 rounded-lg transition-transform group-hover:scale-105">
             <Package className="w-5 h-5" />
           </div>

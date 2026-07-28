@@ -33,7 +33,6 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
                           currentPath === '' ||
                           currentPath === '/index' ||
                           currentPath === '/index.html' ||
-                          currentPath.startsWith('/home') ||
                           currentPath.startsWith('/login') || 
                           currentPath.startsWith('/signup') || 
                           currentPath.startsWith('/forgot-password') ||
