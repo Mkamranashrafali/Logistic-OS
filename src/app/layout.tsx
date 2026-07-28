@@ -7,6 +7,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { GoogleProvider } from "@/context/GoogleProvider";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("http://localhost:3000"),
   title: "LogistiCore | Modern Logistics OS",
   description: "Cloud-based Logistics Operating System for modern logistics companies.",
 };
