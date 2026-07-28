@@ -29,7 +29,8 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   if (response.status === 401) {
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
-      const isAuthRoute = currentPath.startsWith('/login') || 
+      const isAuthRoute = currentPath === '/' ||
+                          currentPath.startsWith('/login') || 
                           currentPath.startsWith('/signup') || 
                           currentPath.startsWith('/forgot-password') ||
                           currentPath.startsWith('/reset-password');
