@@ -151,6 +151,7 @@ def login(user_data: UserLogin, response: Response, db: Session = Depends(get_db
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from app.schemas.user import GoogleLoginRequest
+import requests
 
 # Global session to cache certificates in memory and prevent duplicate fetches
 _google_request_session = google_requests.Request()
@@ -158,13 +159,18 @@ _google_request_session = google_requests.Request()
 @router.post("/google", summary="Google OAuth Login")
 def google_login(payload: GoogleLoginRequest, response: Response, db: Session = Depends(get_db)) -> Any:
     try:
-        idinfo = id_token.verify_oauth2_token(
-            payload.credential, 
-            _google_request_session, 
-            settings.GOOGLE_CLIENT_ID
+        user_info_response = requests.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {payload.credential}"}
         )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail="Invalid Google token")
+        if user_info_response.status_code != 200:
+            raise HTTPException(status_code=400, detail="Invalid Google access token")
+            
+        idinfo = user_info_response.json()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Failed to verify Google token")
 
     if not idinfo.get("email_verified"):
         raise HTTPException(status_code=400, detail="Google email is not verified")
