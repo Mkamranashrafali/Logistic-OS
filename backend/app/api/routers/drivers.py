@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Query
+# from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from typing import Any, List
 
@@ -20,7 +21,7 @@ def create_driver(
     current_user: User = Depends(get_current_user)
 ) -> Any:
     if not obj_in.email:
-        from fastapi import HTTPException
+        # from fastapi import HTTPException
         raise HTTPException(status_code=400, detail="Driver must have an email address to create a login account.")
     
     from app.models.driver import Driver
