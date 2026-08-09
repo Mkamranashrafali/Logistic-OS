@@ -14,6 +14,8 @@ class Company(Base, TimestampMixin, SoftDeleteMixin):
     tax_id = Column(String, nullable=True)
     address = Column(String, nullable=True)
     contact_email = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    logo_url = Column(String, nullable=True)
 
     users = relationship("User", back_populates="company")
     drivers = relationship("Driver", back_populates="company")

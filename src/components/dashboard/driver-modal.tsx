@@ -149,7 +149,7 @@ export function DriverModal({
             <label className="text-sm font-medium">License Number</label>
             <Input 
               value={formData.license_number}
-              onChange={e => setFormData({...formData, license_number: e.target.value})}
+              onChange={e => setFormData({...formData, license_number: e.target.value.replace(/[^A-Za-z0-9\-]/g, '').toUpperCase()})}
               placeholder="DL-1234567"
             />
           </div>
@@ -157,7 +157,7 @@ export function DriverModal({
             <label className="text-sm font-medium">Phone Number</label>
             <Input 
               value={formData.phone}
-              onChange={e => setFormData({...formData, phone: e.target.value})}
+              onChange={e => setFormData({...formData, phone: e.target.value.replace(/[^\d\s\+\-\(\)]/g, '')})}
               placeholder="+1 555-0123"
             />
           </div>

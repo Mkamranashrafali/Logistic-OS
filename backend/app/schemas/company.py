@@ -7,6 +7,8 @@ class CompanyBase(BaseModel):
     tax_id: Optional[str] = None
     address: Optional[str] = None
     contact_email: Optional[str] = None
+    phone: Optional[str] = None
+    logo_url: Optional[str] = None
 
 class CompanyCreate(CompanyBase):
     pass
@@ -16,6 +18,7 @@ class CompanyUpdate(BaseModel):
     tax_id: Optional[str] = None
     address: Optional[str] = None
     contact_email: Optional[str] = None
+    phone: Optional[str] = None
 
 class CompanyResponse(CompanyBase):
     id: str

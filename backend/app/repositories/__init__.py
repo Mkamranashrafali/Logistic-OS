@@ -20,9 +20,6 @@ from app.schemas.order import OrderCreate, OrderUpdate
 from app.models.expense import Expense
 from app.schemas.expense import ExpenseCreate, ExpenseUpdate
 
-from app.models.document import Document
-from app.schemas.document import DocumentCreate, DocumentUpdate
-
 company_repo = CRUDBase[Company, CompanyCreate, CompanyUpdate](Company)
 driver_repo = CRUDBase[Driver, DriverCreate, DriverUpdate](Driver)
 vehicle_repo = CRUDBase[Vehicle, VehicleCreate, VehicleUpdate](Vehicle)
@@ -30,4 +27,3 @@ customer_repo = CRUDBase[Customer, CustomerCreate, CustomerUpdate](Customer)
 trip_repo = CRUDBase[Trip, TripCreate, TripUpdate](Trip)
 order_repo = CRUDBase[Order, OrderCreate, OrderUpdate](Order)
 expense_repo = CRUDBase[Expense, ExpenseCreate, ExpenseUpdate](Expense)
-document_repo = CRUDBase[Document, DocumentCreate, DocumentUpdate](Document)

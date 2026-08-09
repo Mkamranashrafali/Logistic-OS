@@ -29,7 +29,6 @@ const navigation = [
   { name: "Vehicles", href: "/vehicles", icon: Truck },
   { name: "Customers", href: "/customers", icon: Building2 },
   { name: "Expenses", href: "/expenses", icon: Receipt },
-  { name: "Documents", href: "/documents", icon: FileIcon },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "History", href: "/history", icon: HistoryIcon },
 ];

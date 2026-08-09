@@ -6,8 +6,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.core.config import settings
 from app.core.exceptions import validation_exception_handler, http_exception_handler, general_exception_handler
 from app.api.routers import auth, health
-from app.api.routers import drivers, vehicles, customers, trips, orders, expenses, documents
+from app.api.routers import drivers, vehicles, customers, trips, orders, expenses, companies
 from app.database.session import engine, Base
+import os
+from fastapi.staticfiles import StaticFiles
 
 # Apply IPv4 patch to prevent 21-second connection timeouts on Windows
 import socket
@@ -47,10 +49,10 @@ app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["Aut
 app.include_router(drivers.router, prefix=f"{settings.API_V1_STR}/drivers", tags=["Drivers"])
 app.include_router(vehicles.router, prefix=f"{settings.API_V1_STR}/vehicles", tags=["Vehicles"])
 app.include_router(customers.router, prefix=f"{settings.API_V1_STR}/customers", tags=["Customers"])
+app.include_router(companies.router, prefix=f"{settings.API_V1_STR}/companies", tags=["Companies"])
 app.include_router(trips.router, prefix=f"{settings.API_V1_STR}/trips", tags=["Trips"])
 app.include_router(orders.router, prefix=f"{settings.API_V1_STR}/orders", tags=["Orders"])
 app.include_router(expenses.router, prefix=f"{settings.API_V1_STR}/expenses", tags=["Expenses"])
-app.include_router(documents.router, prefix=f"{settings.API_V1_STR}/documents", tags=["Documents"])
 
 # Workflow Routers
 from app.api.routers import admin_workflow, driver_workflow, dashboard, analytics, planning
@@ -59,6 +61,11 @@ app.include_router(admin_workflow.router, prefix=f"{settings.API_V1_STR}/admin",
 app.include_router(driver_workflow.router, prefix=f"{settings.API_V1_STR}/driver", tags=["Driver Workflow"])
 app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/analytics", tags=["Analytics"])
 app.include_router(planning.router, prefix=f"{settings.API_V1_STR}/planning", tags=["Planning"])
+
+# Serve static uploads
+uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 if __name__ == "__main__":
     import uvicorn

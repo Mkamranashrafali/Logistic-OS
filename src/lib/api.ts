@@ -6,7 +6,7 @@ if (!API_BASE_URL) {
 export class ApiError extends Error {
   public status: number;
   public data: any;
-  
+
   constructor(status: number, message: string, data?: any) {
     super(message);
     this.status = status;
@@ -30,14 +30,14 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     if (typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
       const isAuthRoute = currentPath === '/' ||
-                          currentPath === '' ||
-                          currentPath === '/index' ||
-                          currentPath === '/index.html' ||
-                          currentPath.startsWith('/login') || 
-                          currentPath.startsWith('/signup') || 
-                          currentPath.startsWith('/forgot-password') ||
-                          currentPath.startsWith('/reset-password');
-                          
+        currentPath === '' ||
+        currentPath === '/index' ||
+        currentPath === '/index.html' ||
+        currentPath.startsWith('/login') ||
+        currentPath.startsWith('/signup') ||
+        currentPath.startsWith('/forgot-password') ||
+        currentPath.startsWith('/reset-password');
+
       if (!isAuthRoute) {
         localStorage.removeItem('user');
         window.location.href = '/login';
@@ -61,7 +61,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     } else if (data?.message) {
       errorMessage = data.message;
     }
-    
+
     throw new ApiError(response.status, errorMessage, data);
   }
 

@@ -34,4 +34,3 @@ class Trip(Base, TimestampMixin, SoftDeleteMixin):
     company = relationship("Company", back_populates="trips")
     orders = relationship("Order", back_populates="trip")
     expenses = relationship("Expense", back_populates="trip")
-    documents = relationship("Document", back_populates="trip")

@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { api } from "@/lib/api";
-import { Loader2, User, Phone, Mail, FileCheck, Truck, Building2 } from "lucide-react";
+import { Loader2, User, Phone, Mail, FileCheck, Truck, Building2, Upload } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 
 export default function DriverProfilePage() {
@@ -35,18 +37,37 @@ export default function DriverProfilePage() {
   return (
     <div className="space-y-6 animate-in fade-in-50 max-w-3xl mx-auto">
       <h1 className="text-3xl font-bold tracking-tight">Driver Profile</h1>
+      
       <Card>
         <CardHeader>
           <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-2xl">{profile.name}</CardTitle>
-              <CardDescription>Professional Driver</CardDescription>
+            <div className="flex items-center gap-4">
+              <div className="relative group cursor-pointer">
+                <Avatar className="h-20 w-20 border">
+                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile.name}`} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+                    {profile.name?.substring(0, 2).toUpperCase() || 'DR'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Upload className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div>
+                <CardTitle className="text-2xl">{profile.name}</CardTitle>
+                <CardDescription>Professional Driver</CardDescription>
+              </div>
             </div>
             <StatusBadge status={profile.availability_status} />
           </div>
+          <div className="pt-2">
+             <Button variant="outline" size="sm">
+               Change Profile Picture
+             </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-6 pt-4 border-t">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-muted-foreground" />
               <div>

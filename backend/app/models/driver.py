@@ -16,6 +16,7 @@ class Driver(Base, TimestampMixin, SoftDeleteMixin):
     email = Column(String, nullable=True)
     license_number = Column(String, nullable=True)
     phone = Column(String, nullable=True)
+    profile_pic_url = Column(String, nullable=True)
     
     availability_status = Column(String, default=DriverStatus.AVAILABLE.value, nullable=False, index=True)
     current_trip_id = Column(String, ForeignKey("trips.id"), nullable=True)

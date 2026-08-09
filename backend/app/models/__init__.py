@@ -7,5 +7,4 @@ from app.models.customer import Customer
 from app.models.trip import Trip
 from app.models.order import Order
 from app.models.expense import Expense
-from app.models.document import Document
 from app.models.activity import TripActivityLog
