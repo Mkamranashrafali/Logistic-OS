@@ -92,7 +92,7 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Company Information</CardTitle>
-          <CardDescription>Update your company details and logo.</CardDescription>
+          <CardDescription>Update your company details.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {error && <div className="text-sm text-destructive bg-destructive/10 p-3 rounded">{error}</div>}
@@ -105,7 +105,6 @@ export default function SettingsPage() {
                 {formData.name.substring(0, 2).toUpperCase() || 'LC'}
               </AvatarFallback>
             </Avatar>
-            <Button variant="outline">Upload New Logo</Button>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 pt-4 border-t">
