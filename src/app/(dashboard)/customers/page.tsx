@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table";
-import { Search, Filter, MoreHorizontal, FileText, Phone, Mail, Loader2, Building2 } from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Search, MoreHorizontal, Phone, Mail, Loader2, Building2, MapPin, Plus, User } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuTrigger
@@ -14,7 +12,6 @@ import {
 import { api } from "@/lib/api";
 import { CustomerModal } from "@/components/dashboard/customer-modal";
 import { EmptyState } from "@/components/ui/empty-state";
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function CustomersPage() {
@@ -65,17 +62,19 @@ export default function CustomersPage() {
     <div className="space-y-6 animate-in fade-in-50">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
-          <p className="text-muted-foreground">Manage your client directory and contact information.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Customer Directory</h1>
+          <p className="text-muted-foreground text-sm">Manage client relationships, contact profiles, and billing addresses.</p>
         </div>
-        <Button onClick={handleAdd}>Add Customer</Button>
+        <Button onClick={handleAdd} className="shadow-sm">
+          <Plus className="h-4 w-4 mr-2" /> Add Customer
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search customers by company or name..."
+            placeholder="Search customers by company or contact name..."
             className="pl-9 bg-background w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -83,81 +82,76 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card overflow-hidden shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>Name / Company</TableHead>
-              <TableHead>Contact Info</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(isPending && !customersData) ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-32 text-center">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
-                </TableCell>
-              </TableRow>
-            ) : filteredCustomers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="p-0">
-                  <EmptyState
-                    title="No customers found"
-                    description={searchTerm ? "No customers match your search." : "You haven't added any customers yet."}
-                    icon={Building2}
-                    className="border-0 rounded-none bg-transparent"
-                  />
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredCustomers.map((customer: any) => (
-                <TableRow key={customer.id} className="hover:bg-muted/50 transition-colors">
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium">{customer.name}</span>
-                      <span className="text-xs text-muted-foreground">{customer.company_name || 'Individual'}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col space-y-1">
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Mail className="h-3 w-3 mr-1 shrink-0" /> <span className="truncate max-w-[150px]">{customer.email || 'N/A'}</span>
-                      </div>
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Phone className="h-3 w-3 mr-1 shrink-0" /> {customer.phone || 'N/A'}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    <span className="block truncate max-w-[250px]" title={customer.address}>
-                      {customer.address || 'N/A'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleEdit(customer)}>
-                          Edit Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(customer.id)}>
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {(isPending && !customersData) ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : filteredCustomers.length === 0 ? (
+        <EmptyState
+          title="No customers found"
+          description={searchTerm ? "No customers match your search criteria." : "You haven't added any client profiles yet."}
+          icon={Building2}
+          action={searchTerm ? undefined : <Button onClick={handleAdd}>Add Customer</Button>}
+        />
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredCustomers.map((customer: any) => (
+            <Card key={customer.id} className="group overflow-hidden border border-border/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 bg-card">
+              <CardHeader className="p-5 bg-muted/20 border-b flex flex-row items-start justify-between">
+                <div className="flex items-start space-x-3">
+                  <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-600 group-hover:scale-105 transition-transform mt-0.5">
+                    <Building2 className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-foreground truncate max-w-[160px]" title={customer.name}>
+                      {customer.name}
+                    </h3>
+                    <p className="text-xs font-medium text-muted-foreground truncate max-w-[160px]">
+                      {customer.company_name || 'Individual Client'}
+                    </p>
+                  </div>
+                </div>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-lg hover:bg-muted h-8 w-8 p-0 text-muted-foreground hover:text-foreground transition-colors">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handleEdit(customer)}>
+                      Edit Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive focus:bg-destructive/10" onClick={() => handleDelete(customer.id)}>
+                      Delete Profile
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </CardHeader>
+
+              <CardContent className="p-5 space-y-3 text-xs">
+                <div className="space-y-2">
+                  <div className="flex items-center text-muted-foreground truncate" title={customer.email}>
+                    <Mail className="h-3.5 w-3.5 mr-2 text-primary shrink-0" />
+                    <span className="truncate">{customer.email || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center text-muted-foreground truncate" title={customer.phone}>
+                    <Phone className="h-3.5 w-3.5 mr-2 text-primary shrink-0" />
+                    <span>{customer.phone || 'N/A'}</span>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-border/40 flex items-start text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 mr-2 text-primary shrink-0 mt-0.5" />
+                  <span className="line-clamp-2 text-foreground/80 font-medium" title={customer.address}>
+                    {customer.address || 'No primary address listed'}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <CustomerModal
         isOpen={isModalOpen}

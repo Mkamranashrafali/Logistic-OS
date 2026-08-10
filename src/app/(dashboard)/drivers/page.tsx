@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Search, Phone, Mail, Star, MoreVertical, Loader2, Users } from "lucide-react";
+import { Search, Phone, Mail, Star, MoreVertical, Loader2, Users, Plus, ShieldCheck } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -119,14 +119,16 @@ export default function DriversPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Drivers</h1>
-          <p className="text-muted-foreground">Manage driver accounts, performance, and operational availability.</p>
+          <p className="text-muted-foreground text-sm">Manage driver accounts, performance, and operational availability.</p>
         </div>
-        <Button onClick={handleAdd}>Add Driver</Button>
+        <Button onClick={handleAdd} className="shadow-sm">
+          <Plus className="h-4 w-4 mr-2" /> Add Driver
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search drivers by name, phone, license..."
             className="pl-9 bg-background w-full"
@@ -152,7 +154,7 @@ export default function DriversPage() {
       </div>
 
       {(isPending && !driversData) ? (
-        <div className="flex justify-center py-12">
+        <div className="flex justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : filteredDrivers.length === 0 ? (
@@ -165,22 +167,24 @@ export default function DriversPage() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredDrivers.map((driver: any) => (
-            <Card key={driver.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+            <Card key={driver.id} className="group overflow-hidden border border-border/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 bg-card">
               <CardHeader className="p-0">
-                <div className="h-20 bg-muted/50 w-full relative">
+                <div className="h-20 bg-gradient-to-r from-primary/10 via-primary/5 to-muted w-full relative">
                   <div className="absolute -bottom-6 left-6">
-                    <Avatar className="h-16 w-16 border-4 border-card bg-background">
+                    <Avatar className="h-16 w-16 border-4 border-card bg-background shadow-md">
                       <AvatarImage src={driver.user?.profile_pic_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${driver.name}`} />
-                      <AvatarFallback>{driver.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback className="font-bold bg-primary/10 text-primary">
+                        {driver.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                   </div>
-                  <div className="absolute top-4 right-4">
+                  <div className="absolute top-3 right-3">
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0 bg-background/50 hover:bg-background/80">
+                      <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-lg hover:bg-background/80 h-8 w-8 p-0 bg-background/60 shadow-xs backdrop-blur-xs transition-colors">
                         <span className="sr-only">Open menu</span>
                         <MoreVertical className="h-4 w-4" />
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleEdit(driver)}>Edit Details</DropdownMenuItem>
 
@@ -201,11 +205,16 @@ export default function DriversPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-10 pb-6 px-6">
-                <div className="flex justify-between items-start mb-4">
+
+              <CardContent className="pt-9 pb-5 px-6 space-y-4">
+                <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-bold text-lg truncate max-w-[150px]" title={driver.name}>{driver.name}</h3>
-                    <p className="text-sm text-muted-foreground">Lic: {driver.license_number || 'N/A'}</p>
+                    <h3 className="font-bold text-lg text-foreground truncate max-w-[160px]" title={driver.name}>
+                      {driver.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                      <ShieldCheck className="h-3 w-3 text-primary" /> Lic: {driver.license_number || 'N/A'}
+                    </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <StatusBadge status={driver.lifecycle_status} />
@@ -213,27 +222,27 @@ export default function DriversPage() {
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center text-sm text-muted-foreground truncate" title={driver.phone}>
-                    <Phone className="h-4 w-4 mr-2 shrink-0" />
+                <div className="space-y-2 pt-1 border-t border-border/40 text-xs">
+                  <div className="flex items-center text-muted-foreground truncate" title={driver.phone}>
+                    <Phone className="h-3.5 w-3.5 mr-2 text-primary shrink-0" />
                     {driver.phone || 'N/A'}
                   </div>
-                  <div className="flex items-center text-sm text-muted-foreground truncate" title={driver.email}>
-                    <Mail className="h-4 w-4 mr-2 shrink-0" />
+                  <div className="flex items-center text-muted-foreground truncate" title={driver.email}>
+                    <Mail className="h-3.5 w-3.5 mr-2 text-primary shrink-0" />
                     {driver.email || 'N/A'}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Rating</p>
-                    <div className="flex items-center font-medium">
-                      5.0 <Star className="h-3 w-3 ml-1 fill-warning text-warning" />
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/40 text-xs">
+                  <div className="p-2 rounded-lg bg-muted/30">
+                    <p className="text-muted-foreground mb-0.5">Rating</p>
+                    <div className="flex items-center font-bold text-foreground">
+                      5.0 <Star className="h-3 w-3 ml-1 fill-amber-400 text-amber-400" />
                     </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Trips Completed</p>
-                    <p className="font-medium">0</p>
+                  <div className="p-2 rounded-lg bg-muted/30">
+                    <p className="text-muted-foreground mb-0.5">Trips Completed</p>
+                    <p className="font-bold text-foreground">0</p>
                   </div>
                 </div>
               </CardContent>

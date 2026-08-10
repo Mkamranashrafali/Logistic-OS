@@ -1,5 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LucideIcon } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { LucideIcon, TrendingUp, TrendingDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface StatisticsCardProps {
   title: string;
@@ -7,23 +8,50 @@ interface StatisticsCardProps {
   icon: LucideIcon;
   description?: string;
   trend?: "up" | "down" | "neutral";
+  iconColor?: string;
+  iconBg?: string;
 }
 
-export function StatisticsCard({ title, value, icon: Icon, description, trend }: StatisticsCardProps) {
+export function StatisticsCard({ 
+  title, 
+  value, 
+  icon: Icon, 
+  description, 
+  trend,
+  iconColor = "text-primary",
+  iconBg = "bg-primary/10"
+}: StatisticsCardProps) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+    <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border-border/60 hover:border-primary/30">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between space-x-4">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {title}
+            </p>
+            <div className="text-2xl font-bold tracking-tight text-foreground">
+              {value}
+            </div>
+          </div>
+          <div className={cn("p-3 rounded-xl transition-transform duration-300 group-hover:scale-110 shrink-0", iconBg, iconColor)}>
+            <Icon className="h-5 w-5" />
+          </div>
+        </div>
+
         {description && (
-          <p className="text-xs text-muted-foreground mt-1">
-            {trend === "up" && <span className="text-success font-medium mr-1">?</span>}
-            {trend === "down" && <span className="text-destructive font-medium mr-1">?</span>}
-            {description}
-          </p>
+          <div className="mt-3 pt-3 border-t border-border/40 flex items-center text-xs text-muted-foreground">
+            {trend === "up" && (
+              <span className="inline-flex items-center text-emerald-600 font-medium mr-1.5 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                <TrendingUp className="h-3 w-3 mr-0.5" /> +
+              </span>
+            )}
+            {trend === "down" && (
+              <span className="inline-flex items-center text-rose-600 font-medium mr-1.5 bg-rose-500/10 px-1.5 py-0.5 rounded">
+                <TrendingDown className="h-3 w-3 mr-0.5" /> -
+              </span>
+            )}
+            <span className="truncate">{description}</span>
+          </div>
         )}
       </CardContent>
     </Card>
