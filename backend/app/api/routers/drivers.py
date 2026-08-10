@@ -359,3 +359,29 @@ def restore_driver(
         pass # Don't block restoration on email failure
         
     return success_response(message="Driver restored successfully and invitation sent")
+
+@router.delete("/{id}", response_model=dict, summary="Delete Driver")
+def delete_driver(
+    id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    from app.models.driver import Driver
+    from app.models.user import User
+    from fastapi import HTTPException
+    from datetime import datetime, timezone
+
+    driver = db.query(Driver).filter(Driver.id == id, Driver.is_deleted == False).first()
+    if not driver or driver.company_id != current_user.company_id:
+        raise HTTPException(status_code=404, detail="Driver not found")
+
+    if driver.user_id:
+        user = db.query(User).filter(User.id == driver.user_id).first()
+        if user:
+            user.is_active = False
+            user.is_deleted = True
+            user.deleted_at = datetime.now(timezone.utc)
+
+    driver_service.remove(db, id=id)
+    return success_response(message="Driver deleted successfully")
+

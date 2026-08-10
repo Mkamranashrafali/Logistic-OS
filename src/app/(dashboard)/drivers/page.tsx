@@ -49,7 +49,7 @@ export default function DriversPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to disable/delete this driver?")) return;
+    if (!confirm("Are you sure you want to delete this driver?")) return;
     try {
       await api.delete(`/drivers/${id}`);
       queryClient.invalidateQueries({ queryKey: ["drivers"] });
@@ -195,7 +195,7 @@ export default function DriversPage() {
                         )}
 
                         <DropdownMenuItem className="text-amber-600 focus:bg-amber-50" onClick={() => handleArchive(driver.id)}>Archive Driver</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10" onClick={() => handleDelete(driver.id)}>Disable / Delete</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10" onClick={() => handleDelete(driver.id)}>Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
