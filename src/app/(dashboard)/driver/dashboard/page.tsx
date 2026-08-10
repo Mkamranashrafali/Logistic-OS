@@ -10,11 +10,28 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { api } from "@/lib/api";
 import { Loader2, Play, Pause, Square, MapPin } from "lucide-react";
 
-export default function DriverDashboardPage() {
-  const [trips, setTrips] = useState<any[]>([]);
-  const [activities, setActivities] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
+export default function DriverDashboardPage() {
+  const queryClient = useQueryClient();
+
+  const { data, isPending } = useQuery({
+    queryKey: ["driver-dashboard"],
+    queryFn: async () => {
+      const [tripsData, activitiesData] = await Promise.all([
+        api.get('/driver/trips'),
+        api.get('/driver/activities')
+      ]);
+
+      return {
+        trips: tripsData || [],
+        activities: activitiesData || [],
+      };
+    },
+  });
+
+  const trips = data?.trips || [];
+  const activities = data?.activities || [];
 
   // Expense State
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
@@ -24,25 +41,6 @@ export default function DriverDashboardPage() {
 
   const EXPENSE_CATEGORIES = ["Fuel", "Toll", "Parking", "Loading", "Unloading", "Repair", "Food", "Hotel", "Fine", "Delivery Proof", "Other"];
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const tripsData = await api.get('/driver/trips');
-      setTrips(tripsData || []);
-
-      const activitiesData = await api.get('/driver/activities');
-      setActivities(activitiesData || []);
-    } catch (err) {
-      console.error("Failed to fetch driver data", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const [tripActionLoading, setTripActionLoading] = useState(false);
 
   const handleTripAction = async (action: 'start' | 'pause' | 'resume' | 'complete', tripId: string) => {
@@ -50,7 +48,8 @@ export default function DriverDashboardPage() {
     setTripActionLoading(true);
     try {
       await api.post(`/driver/trips/${tripId}/${action}`, {});
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ["driver-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["driver-trips"] });
     } catch (err: any) {
       alert(err.message || `Failed to ${action} trip`);
     } finally {
@@ -76,7 +75,8 @@ export default function DriverDashboardPage() {
       });
       setIsExpenseOpen(false);
       setExpenseAmount(""); setExpenseNotes(""); setExpenseCategory("Toll");
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ["driver-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["driver-expenses"] });
     } catch (err: any) {
       alert(err.message || "Failed to add expense");
     } finally {
@@ -84,7 +84,7 @@ export default function DriverDashboardPage() {
     }
   };
 
-  if (isLoading) {
+  if (isPending && !data) {
     return (
       <div className="flex h-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -223,7 +223,7 @@ export default function DriverDashboardPage() {
           <CardContent>
             {activities.length > 0 ? (
               <div className="space-y-4">
-                {activities.map((act) => (
+                {activities.map((act: any) => (
                   <div key={act.id} className="flex items-start gap-4">
                     <div className="w-2 h-2 mt-2 rounded-full bg-primary" />
                     <div>

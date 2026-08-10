@@ -7,18 +7,17 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQueryClient } from "@tanstack/react-query";
 
-export function VehicleModal({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  vehicle 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  onSuccess: () => void; 
-  vehicle: any | null;
-}) {
+interface VehicleModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  vehicle?: any;
+}
+
+export function VehicleModal({ isOpen, onClose, onSuccess, vehicle }: VehicleModalProps) {
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -66,6 +65,7 @@ export function VehicleModal({
       } else {
         await api.post('/vehicles', payload);
       }
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       onSuccess();
       onClose();
     } catch (err: any) {

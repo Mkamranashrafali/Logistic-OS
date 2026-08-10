@@ -6,18 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
-export function CustomerModal({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  customer 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  onSuccess: () => void; 
-  customer: any | null;
-}) {
+interface CustomerModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  customer?: any;
+}
+
+export function CustomerModal({ isOpen, onClose, onSuccess, customer }: CustomerModalProps) {
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -60,6 +59,7 @@ export function CustomerModal({
       } else {
         await api.post('/customers', formData);
       }
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
       onSuccess();
       onClose();
     } catch (err: any) {

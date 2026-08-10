@@ -55,12 +55,13 @@ app.include_router(orders.router, prefix=f"{settings.API_V1_STR}/orders", tags=[
 app.include_router(expenses.router, prefix=f"{settings.API_V1_STR}/expenses", tags=["Expenses"])
 
 # Workflow Routers
-from app.api.routers import admin_workflow, driver_workflow, dashboard, analytics, planning
+from app.api.routers import admin_workflow, driver_workflow, dashboard, analytics, planning, upload
 app.include_router(dashboard.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["Dashboard"])
 app.include_router(admin_workflow.router, prefix=f"{settings.API_V1_STR}/admin", tags=["Admin Workflow"])
 app.include_router(driver_workflow.router, prefix=f"{settings.API_V1_STR}/driver", tags=["Driver Workflow"])
 app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/analytics", tags=["Analytics"])
 app.include_router(planning.router, prefix=f"{settings.API_V1_STR}/planning", tags=["Planning"])
+app.include_router(upload.router, prefix=f"{settings.API_V1_STR}/upload", tags=["Upload"])
 
 # Serve static uploads
 uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")

@@ -10,42 +10,40 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 
+import { useQuery } from "@tanstack/react-query";
+
 export default function HistoryPage() {
-  const [completedTrips, setCompletedTrips] = useState<any[]>([]);
-  const [terminatedDrivers, setTerminatedDrivers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isPending } = useQuery({
+    queryKey: ["history"],
+    queryFn: async () => {
+      const [tripsData, driversData] = await Promise.all([
+        api.get('/trips/'),
+        api.get('/drivers/?include_deleted=true')
+      ]);
+
+      const pastTrips = (tripsData || []).filter((t: any) => t.trip_status === 'completed' || t.trip_status === 'COMPLETED');
+      const inactiveDrivers = (driversData || []).filter((d: any) => d.is_deleted === true || d.lifecycle_status === 'archived');
+
+      return {
+        completedTrips: pastTrips,
+        terminatedDrivers: inactiveDrivers,
+      };
+    },
+  });
+
+  const completedTrips = data?.completedTrips || [];
+  const terminatedDrivers = data?.terminatedDrivers || [];
+  const isLoading = isPending && !data;
 
   const [tripSearch, setTripSearch] = useState("");
   const [driverSearch, setDriverSearch] = useState("");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch trips
-        const tripsData = await api.get('/trips/');
-        const pastTrips = (tripsData || []).filter((t: any) => t.trip_status === 'completed' || t.trip_status === 'COMPLETED');
-        setCompletedTrips(pastTrips);
-
-        // Fetch drivers including deleted/archived
-        const driversData = await api.get('/drivers/?include_deleted=true');
-        const inactiveDrivers = (driversData || []).filter((d: any) => d.is_deleted === true || d.lifecycle_status === 'archived');
-        setTerminatedDrivers(inactiveDrivers);
-
-      } catch (err) {
-        console.error("Failed to fetch history data", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  const filteredTrips = completedTrips.filter((trip) => {
+  const filteredTrips = completedTrips.filter((trip: any) => {
     const searchStr = `${trip.origin || ""} ${trip.destination || ""}`.toLowerCase();
     return tripSearch === "" || searchStr.includes(tripSearch.toLowerCase());
   });
 
-  const filteredDrivers = terminatedDrivers.filter((driver) => {
+  const filteredDrivers = terminatedDrivers.filter((driver: any) => {
     const searchStr = `${driver.name || ""} ${driver.license_number || ""}`.toLowerCase();
     return driverSearch === "" || searchStr.includes(driverSearch.toLowerCase());
   });
@@ -87,7 +85,7 @@ export default function HistoryPage() {
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredTrips.map(trip => (
+              {filteredTrips.map((trip: any) => (
                 <Card key={trip.id} className="opacity-90 shadow-sm hover:shadow-md transition-shadow">
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
@@ -138,7 +136,7 @@ export default function HistoryPage() {
             />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredDrivers.map(driver => (
+              {filteredDrivers.map((driver: any) => (
                 <Card key={driver.id} className="bg-muted/30 border-dashed">
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">

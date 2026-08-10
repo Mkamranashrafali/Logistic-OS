@@ -11,24 +11,15 @@ import { api } from "@/lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatisticsCard } from "@/components/dashboard/statistics-card";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ReportsPage() {
   const [dateRange, setDateRange] = useState("30days");
   const [activeTab, setActiveTab] = useState("revenue");
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Data states
-  const [revenueData, setRevenueData] = useState<any[]>([]);
-  const [tripData, setTripData] = useState<any>({});
-  const [fuelData, setFuelData] = useState<any>({});
-  const [driverData, setDriverData] = useState<any[]>([]);
-  const [vehicleData, setVehicleData] = useState<any[]>([]);
-  const [customerData, setCustomerData] = useState<any[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-
+  const { data: reportsData, isPending } = useQuery({
+    queryKey: ["reports", activeTab, dateRange],
+    queryFn: async () => {
       let startDateStr = "";
       const now = new Date();
       if (dateRange === "today") {
@@ -48,38 +39,50 @@ export default function ReportsPage() {
 
       const queryParams = startDateStr ? `?start_date=${encodeURIComponent(startDateStr)}` : '';
 
-      try {
-        if (activeTab === "revenue") {
-          const res = await api.get(`/analytics/revenue${queryParams}`);
-          setRevenueData((res || []).map((item: any) => ({
-            name: new Date(item.date).toLocaleDateString('default', { month: 'short', day: 'numeric' }),
-            revenue: item.revenue,
-            expenses: item.expenses
-          })));
-        } else if (activeTab === "trips") {
-          const res = await api.get(`/analytics/trips${queryParams}`);
-          setTripData(res || {});
-        } else if (activeTab === "fuel") {
-          const res = await api.get(`/analytics/fuel${queryParams}`);
-          setFuelData(res || {});
-        } else if (activeTab === "drivers") {
-          const res = await api.get(`/analytics/drivers${queryParams}`);
-          setDriverData(res || []);
-        } else if (activeTab === "vehicles") {
-          const res = await api.get(`/analytics/vehicles${queryParams}`);
-          setVehicleData(res || []);
-        } else if (activeTab === "customers") {
-          const res = await api.get(`/analytics/customers${queryParams}`);
-          setCustomerData(res || []);
-        }
-      } catch (err) {
-        console.error("Failed to fetch analytics for " + activeTab, err);
-      } finally {
-        setIsLoading(false);
+      let rev: any[] = [];
+      let trip: any = {};
+      let fuel: any = {};
+      let driver: any[] = [];
+      let vehicle: any[] = [];
+      let customer: any[] = [];
+
+      if (activeTab === "revenue") {
+        const res = await api.get(`/analytics/revenue${queryParams}`);
+        rev = (res || []).map((item: any) => ({
+          name: new Date(item.date).toLocaleDateString('default', { month: 'short', day: 'numeric' }),
+          revenue: item.revenue,
+          expenses: item.expenses
+        }));
+      } else if (activeTab === "trips") {
+        trip = (await api.get(`/analytics/trips${queryParams}`)) || {};
+      } else if (activeTab === "fuel") {
+        fuel = (await api.get(`/analytics/fuel${queryParams}`)) || {};
+      } else if (activeTab === "drivers") {
+        driver = (await api.get(`/analytics/drivers${queryParams}`)) || [];
+      } else if (activeTab === "vehicles") {
+        vehicle = (await api.get(`/analytics/vehicles${queryParams}`)) || [];
+      } else if (activeTab === "customers") {
+        customer = (await api.get(`/analytics/customers${queryParams}`)) || [];
       }
-    };
-    fetchData();
-  }, [activeTab, dateRange]);
+
+      return {
+        revenueData: rev,
+        tripData: trip,
+        fuelData: fuel,
+        driverData: driver,
+        vehicleData: vehicle,
+        customerData: customer,
+      };
+    },
+  });
+
+  const revenueData = reportsData?.revenueData || [];
+  const tripData = reportsData?.tripData || {};
+  const fuelData = reportsData?.fuelData || {};
+  const driverData = reportsData?.driverData || [];
+  const vehicleData = reportsData?.vehicleData || [];
+  const customerData = reportsData?.customerData || [];
+  const isLoading = isPending && !reportsData;
 
   return (
     <div className="space-y-6 animate-in fade-in-50">

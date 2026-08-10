@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Calendar } from "lucide-react";
 import { api } from "@/lib/api";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 interface AssignmentModalProps {
   orderId: string | null;
   open: boolean;
@@ -15,6 +17,7 @@ interface AssignmentModalProps {
 }
 
 export function AssignmentModal({ orderId, open, onOpenChange, onAssigned }: AssignmentModalProps) {
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
 
@@ -61,6 +64,11 @@ export function AssignmentModal({ orderId, open, onOpenChange, onAssigned }: Ass
         vehicle_id: selectedVehicle
       });
       alert("Order Assigned: Trip has been automatically created.");
+      queryClient.invalidateQueries({ queryKey: ["planning"] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
+      queryClient.invalidateQueries({ queryKey: ["drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       onOpenChange(false);
       onAssigned();
     } catch (error: any) {

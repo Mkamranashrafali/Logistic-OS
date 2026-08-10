@@ -14,30 +14,26 @@ import { api } from "@/lib/api";
 import { ExpenseModal } from "@/components/dashboard/expense-modal";
 import { EmptyState } from "@/components/ui/empty-state";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 export default function ExpensesPage() {
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data: expensesData, isPending } = useQuery({
+    queryKey: ["expenses"],
+    queryFn: async () => {
+      const res = await api.get('/expenses');
+      return res || [];
+    },
+  });
+
+  const expenses = expensesData || [];
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<any>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-
-  const fetchExpenses = async () => {
-    try {
-      setIsLoading(true);
-      const data = await api.get('/expenses');
-      setExpenses(data || []);
-    } catch (err) {
-      console.error("Failed to fetch expenses", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchExpenses();
-  }, []);
 
   const handleAdd = () => {
     setSelectedExpense(null);
@@ -53,14 +49,14 @@ export default function ExpensesPage() {
     if (!confirm("Are you sure you want to delete this expense?")) return;
     try {
       await api.delete(`/expenses/${id}`);
-      fetchExpenses();
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
     } catch (err) {
       console.error("Failed to delete expense", err);
       alert("Failed to delete expense");
     }
   };
 
-  const filteredExpenses = expenses.filter((expense) => {
+  const filteredExpenses = expenses.filter((expense: any) => {
     const searchStr = `${expense.description || ""} ${expense.category || ""}`.toLowerCase();
     const matchesSearch = searchTerm === "" || searchStr.includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter;
@@ -117,7 +113,7 @@ export default function ExpensesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {(isPending && !expensesData) ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-32 text-center">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
@@ -135,7 +131,7 @@ export default function ExpensesPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredExpenses.map((expense) => (
+              filteredExpenses.map((expense: any) => (
                 <TableRow key={expense.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell className="font-medium">
                     <div className="flex flex-col">
@@ -184,7 +180,7 @@ export default function ExpensesPage() {
       <ExpenseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchExpenses}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["expenses"] })}
         expense={selectedExpense}
       />
     </div>

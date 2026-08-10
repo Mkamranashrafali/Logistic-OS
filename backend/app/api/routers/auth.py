@@ -439,15 +439,24 @@ def change_password(
 @router.get("/me", summary="Get current authenticated user")
 def get_me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Any:
     name = current_user.email.split('@')[0].replace('.', ' ').title()
+    profile_pic_url = None
     
     if current_user.role == "driver":
         from app.models.driver import Driver
         driver = db.query(Driver).filter(Driver.user_id == current_user.id).first()
-        if driver and driver.name:
-            name = driver.name
+        if driver:
+            if driver.name:
+                name = driver.name
+            profile_pic_url = driver.profile_pic_url
+    else:
+        from app.models.company import Company
+        company = db.query(Company).filter(Company.id == current_user.company_id).first()
+        if company:
+            profile_pic_url = company.logo_url
 
     user_data = UserResponse.model_validate(current_user).model_dump()
     user_data["name"] = name
+    user_data["profile_pic_url"] = profile_pic_url
 
     return success_response(
         message="User profile retrieved successfully",

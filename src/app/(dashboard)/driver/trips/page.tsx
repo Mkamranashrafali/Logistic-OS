@@ -6,25 +6,20 @@ import { api } from "@/lib/api";
 import { Loader2, MapPin } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 
+import { useQuery } from "@tanstack/react-query";
+
 export default function DriverTripsPage() {
-  const [trips, setTrips] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: tripsData, isPending } = useQuery({
+    queryKey: ["driver-trips"],
+    queryFn: async () => {
+      const res = await api.get('/driver/trips');
+      return res || [];
+    },
+  });
 
-  useEffect(() => {
-    const fetchTrips = async () => {
-      try {
-        const data = await api.get('/driver/trips');
-        setTrips(data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchTrips();
-  }, []);
+  const trips = tripsData || [];
 
-  if (isLoading) {
+  if (isPending && !tripsData) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
@@ -35,7 +30,7 @@ export default function DriverTripsPage() {
         {trips.length === 0 ? (
           <p className="text-muted-foreground">No trips found.</p>
         ) : (
-          trips.map(trip => (
+          trips.map((trip: any) => (
             <Card key={trip.id}>
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">

@@ -18,33 +18,32 @@ import {
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/empty-state";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 export default function TripsPage() {
-  const [trips, setTrips] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data: tripsData, isPending } = useQuery({
+    queryKey: ["trips"],
+    queryFn: async () => {
+      const res = await api.get('/trips');
+      return res || [];
+    },
+  });
+
+  const trips = tripsData || [];
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-
-  useEffect(() => {
-    fetchTrips();
-  }, []);
-
-  const fetchTrips = async () => {
-    try {
-      const data = await api.get('/trips');
-      setTrips(data || []);
-    } catch (err) {
-      console.error("Failed to fetch trips", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleComplete = async (id: string) => {
     if (!confirm("Mark this trip as completed?")) return;
     try {
       await api.patch(`/trips/${id}`, { trip_status: "completed" });
-      fetchTrips();
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
+      queryClient.invalidateQueries({ queryKey: ["history"] });
+      queryClient.invalidateQueries({ queryKey: ["drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
     } catch (err) {
       console.error("Failed to complete trip", err);
       alert("Failed to complete trip");
@@ -55,14 +54,14 @@ export default function TripsPage() {
     if (!confirm("Are you sure you want to delete this trip?")) return;
     try {
       await api.delete(`/trips/${id}`);
-      fetchTrips();
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
     } catch (err) {
       console.error("Failed to delete trip", err);
       alert("Failed to delete trip");
     }
   };
 
-  const filteredTrips = trips.filter((trip) => {
+  const filteredTrips = trips.filter((trip: any) => {
     const searchStr = `${trip.origin || ""} ${trip.destination || ""}`.toLowerCase();
     const matchesSearch = searchTerm === "" || searchStr.includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || trip.trip_status === statusFilter;
@@ -125,7 +124,7 @@ export default function TripsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
+            {(isPending && !tripsData) ? (
                 <TableRow>
                   <TableCell colSpan={12} className="h-32 text-center">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
@@ -143,7 +142,7 @@ export default function TripsPage() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTrips.map((trip) => (
+                filteredTrips.map((trip: any) => (
                   <TableRow key={trip.id} className="hover:bg-muted/50 transition-colors">
                     <TableCell>
                       <div className="flex flex-col space-y-1">

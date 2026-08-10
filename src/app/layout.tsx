@@ -5,6 +5,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 
 import { GoogleProvider } from "@/context/GoogleProvider";
+import { QueryProvider } from "@/providers/QueryProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("http://localhost:3000"),
@@ -22,11 +23,13 @@ export default function RootLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} font-sans antialiased`}
       >
-        <GoogleProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </GoogleProvider>
+        <QueryProvider>
+          <GoogleProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </GoogleProvider>
+        </QueryProvider>
       </body>
     </html>
   );

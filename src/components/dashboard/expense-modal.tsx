@@ -7,18 +7,17 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQueryClient } from "@tanstack/react-query";
 
-export function ExpenseModal({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  expense 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  onSuccess: () => void; 
-  expense: any | null;
-}) {
+interface ExpenseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  expense?: any;
+}
+
+export function ExpenseModal({ isOpen, onClose, onSuccess, expense }: ExpenseModalProps) {
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [trips, setTrips] = useState<any[]>([]);
@@ -70,6 +69,8 @@ export function ExpenseModal({
       } else {
         await api.post('/expenses', payload);
       }
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["trips"] });
       onSuccess();
       onClose();
     } catch (err: any) {

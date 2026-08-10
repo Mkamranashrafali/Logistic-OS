@@ -5,25 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { api } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 
+import { useQuery } from "@tanstack/react-query";
+
 export default function DriverExpensesPage() {
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: expensesData, isPending } = useQuery({
+    queryKey: ["driver-expenses"],
+    queryFn: async () => {
+      const res = await api.get('/driver/expenses');
+      return res || [];
+    },
+  });
 
-  useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        const data = await api.get('/driver/expenses');
-        setExpenses(data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchExpenses();
-  }, []);
+  const expenses = expensesData || [];
 
-  if (isLoading) {
+  if (isPending && !expensesData) {
     return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
@@ -34,7 +29,7 @@ export default function DriverExpensesPage() {
         {expenses.length === 0 ? (
           <p className="text-muted-foreground">No expenses found.</p>
         ) : (
-          expenses.map(exp => (
+          expenses.map((exp: any) => (
             <Card key={exp.id}>
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">

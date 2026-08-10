@@ -7,18 +7,17 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQueryClient } from "@tanstack/react-query";
 
-export function DriverModal({ 
-  isOpen, 
-  onClose, 
-  onSuccess, 
-  driver 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  onSuccess: () => void; 
-  driver: any | null;
-}) {
+interface DriverModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  driver?: any;
+}
+
+export function DriverModal({ isOpen, onClose, onSuccess, driver }: DriverModalProps) {
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -66,6 +65,7 @@ export function DriverModal({
       } else {
         await api.post('/drivers', formData);
       }
+      queryClient.invalidateQueries({ queryKey: ["drivers"] });
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -85,6 +85,7 @@ export function DriverModal({
     setError("");
     try {
       await api.post(`/drivers/${archivedDriverData.driver_id}/restore`, {});
+      queryClient.invalidateQueries({ queryKey: ["drivers"] });
       onSuccess();
       onClose();
     } catch (err: any) {

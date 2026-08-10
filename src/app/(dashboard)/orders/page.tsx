@@ -19,52 +19,49 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/empty-state";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [customerMap, setCustomerMap] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
+  const { data, isPending } = useQuery({
+    queryKey: ["orders"],
+    queryFn: async () => {
       const [ordersData, customersData] = await Promise.all([
         api.get('/orders'),
         api.get('/customers')
       ]);
 
-      setOrders(ordersData || []);
-
       const cMap: Record<string, string> = {};
       (customersData || []).forEach((c: any) => {
         cMap[c.id] = c.name;
       });
-      setCustomerMap(cMap);
 
-    } catch (err) {
-      console.error("Failed to fetch data", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return {
+        orders: ordersData || [],
+        customerMap: cMap,
+      };
+    },
+  });
+
+  const orders = data?.orders || [];
+  const customerMap = data?.customerMap || {};
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this order?")) return;
     try {
       await api.delete(`/orders/${id}`);
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
     } catch (err) {
       console.error("Failed to delete order", err);
       alert("Failed to delete order");
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
+  const filteredOrders = orders.filter((order: any) => {
     const customerName = customerMap[order.customer_id] || "Unknown Customer";
     const searchStr = `${customerName} ${order.pickup_location || ""} ${order.delivery_location || ""}`.toLowerCase();
 
@@ -126,7 +123,7 @@ export default function OrdersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {(isPending && !data) ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-32 text-center">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
@@ -144,7 +141,7 @@ export default function OrdersPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredOrders.map((order) => {
+              filteredOrders.map((order: any) => {
                 const customerName = customerMap[order.customer_id] || "Unknown Customer";
                 return (
                   <TableRow key={order.id} className="hover:bg-muted/50 transition-colors">

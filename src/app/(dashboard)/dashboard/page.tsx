@@ -14,41 +14,34 @@ import {
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+import { useQuery } from "@tanstack/react-query";
+
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isPending } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: async () => {
+      const [statsData, revenueTrend] = await Promise.all([
+        api.get('/dashboard/stats'),
+        api.get('/analytics/revenue')
+      ]);
 
-  const [chartData, setChartData] = useState<any[]>([]);
+      const formattedChartData = (revenueTrend || []).map((item: any) => ({
+        name: new Date(item.date).toLocaleDateString('default', { month: 'short', day: 'numeric' }),
+        revenue: item.revenue,
+        expenses: item.expenses
+      }));
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [statsData, revenueTrend] = await Promise.all([
-          api.get('/dashboard/stats'),
-          api.get('/analytics/revenue')
-        ]);
+      return {
+        stats: statsData,
+        chartData: formattedChartData,
+      };
+    },
+  });
 
-        setStats(statsData);
+  const stats = data?.stats;
+  const chartData = data?.chartData || [];
 
-        // Format revenue trend for recharts
-        const formattedChartData = (revenueTrend || []).map((item: any) => ({
-          name: new Date(item.date).toLocaleDateString('default', { month: 'short', day: 'numeric' }),
-          revenue: item.revenue,
-          expenses: item.expenses
-        }));
-
-        setChartData(formattedChartData);
-
-      } catch (err) {
-        console.error("Failed to fetch dashboard data", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchDashboardData();
-  }, []);
-
-  if (isLoading) {
+  if (isPending && !data) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
         <div className="flex flex-col items-center space-y-4">

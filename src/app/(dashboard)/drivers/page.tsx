@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Search, Filter, Phone, Mail, Star, MoreVertical, Loader2, Users } from "lucide-react";
+import { Search, Phone, Mail, Star, MoreVertical, Loader2, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -16,34 +16,27 @@ import {
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/empty-state";
-
 import { DriverModal } from "@/components/dashboard/driver-modal";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function DriversPage() {
-  const [drivers, setDrivers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data: driversData, isPending } = useQuery({
+    queryKey: ["drivers"],
+    queryFn: async () => {
+      const res = await api.get('/drivers');
+      return res || [];
+    },
+  });
+
+  const drivers = driversData || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<any>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-
-  useEffect(() => {
-    fetchDrivers();
-  }, []);
-
-  const fetchDrivers = async () => {
-    try {
-      setIsLoading(true);
-      const data = await api.get('/drivers');
-      setDrivers(data || []);
-    } catch (err) {
-      console.error("Failed to fetch drivers", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAdd = () => {
     setSelectedDriver(null);
@@ -59,7 +52,7 @@ export default function DriversPage() {
     if (!confirm("Are you sure you want to disable/delete this driver?")) return;
     try {
       await api.delete(`/drivers/${id}`);
-      fetchDrivers();
+      queryClient.invalidateQueries({ queryKey: ["drivers"] });
     } catch (err) {
       console.error("Failed to delete driver", err);
       alert("Failed to delete driver");
@@ -70,7 +63,7 @@ export default function DriversPage() {
     if (!confirm("Are you sure you want to deactivate this driver? They will not be able to log in.")) return;
     try {
       await api.post(`/drivers/${id}/deactivate`, {});
-      fetchDrivers();
+      queryClient.invalidateQueries({ queryKey: ["drivers"] });
     } catch (err) {
       console.error("Failed to deactivate driver", err);
       alert("Failed to deactivate driver");
@@ -80,7 +73,7 @@ export default function DriversPage() {
   const handleActivate = async (id: string) => {
     try {
       await api.post(`/drivers/${id}/activate`, {});
-      fetchDrivers();
+      queryClient.invalidateQueries({ queryKey: ["drivers"] });
     } catch (err) {
       console.error("Failed to activate driver", err);
       alert("Failed to activate driver");
@@ -91,7 +84,8 @@ export default function DriversPage() {
     if (!confirm("Are you sure you want to archive this driver? This will revoke access but preserve history.")) return;
     try {
       await api.post(`/drivers/${id}/archive`, {});
-      fetchDrivers();
+      queryClient.invalidateQueries({ queryKey: ["drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["history"] });
     } catch (err) {
       console.error("Failed to archive driver", err);
       alert("Failed to archive driver");
@@ -108,13 +102,16 @@ export default function DriversPage() {
     }
   };
 
-  const activeDrivers = drivers.filter(d => d.lifecycle_status !== 'archived');
-
-  const filteredDrivers = activeDrivers.filter((driver) => {
-    const searchStr = `${driver.name || ""} ${driver.license_number || ""}`.toLowerCase();
+  const filteredDrivers = drivers.filter((driver: any) => {
+    const searchStr = `${driver.name || ""} ${driver.license_number || ""} ${driver.phone || ""} ${driver.email || ""}`.toLowerCase();
     const matchesSearch = searchTerm === "" || searchStr.includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || driver.lifecycle_status === statusFilter || driver.availability_status === statusFilter;
-    return matchesSearch && matchesStatus;
+
+    if (!matchesSearch) return false;
+    if (statusFilter === "all") return true;
+    if (statusFilter === "active" || statusFilter === "inactive" || statusFilter === "pending") {
+      return driver.lifecycle_status === statusFilter;
+    }
+    return driver.availability_status === statusFilter;
   });
 
   return (
@@ -122,21 +119,16 @@ export default function DriversPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Drivers</h1>
-          <p className="text-muted-foreground">Manage your fleet drivers and view performance.</p>
+          <p className="text-muted-foreground">Manage driver accounts, performance, and operational availability.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => window.location.href = '/drivers/archived'}>
-            Archived Drivers
-          </Button>
-          <Button onClick={handleAdd}>Add Driver</Button>
-        </div>
+        <Button onClick={handleAdd}>Add Driver</Button>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search drivers by name or license..."
+            placeholder="Search drivers by name, phone, license..."
             className="pl-9 bg-background w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -159,26 +151,26 @@ export default function DriversPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {(isPending && !driversData) ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : filteredDrivers.length === 0 ? (
         <EmptyState
-          title="No drivers found"
-          description={searchTerm || statusFilter !== "all" ? "No drivers match your current filters." : "You haven't added any drivers yet."}
           icon={Users}
-          className="bg-card"
+          title="No drivers found"
+          description={searchTerm || statusFilter !== "all" ? "Try adjusting your search terms or filters." : "Get started by adding your first driver."}
+          action={searchTerm || statusFilter !== "all" ? undefined : <Button onClick={handleAdd}>Add Driver</Button>}
         />
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredDrivers.map((driver) => (
+          {filteredDrivers.map((driver: any) => (
             <Card key={driver.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
               <CardHeader className="p-0">
                 <div className="h-20 bg-muted/50 w-full relative">
                   <div className="absolute -bottom-6 left-6">
                     <Avatar className="h-16 w-16 border-4 border-card bg-background">
-                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${driver.name}`} />
+                      <AvatarImage src={driver.user?.profile_pic_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${driver.name}`} />
                       <AvatarFallback>{driver.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </div>
@@ -202,7 +194,8 @@ export default function DriversPage() {
                           <DropdownMenuItem onClick={() => handleActivate(driver.id)}>Activate</DropdownMenuItem>
                         )}
 
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleArchive(driver.id)}>Archive Driver</DropdownMenuItem>
+                        <DropdownMenuItem className="text-amber-600 focus:bg-amber-50" onClick={() => handleArchive(driver.id)}>Archive Driver</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10" onClick={() => handleDelete(driver.id)}>Disable / Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -252,7 +245,7 @@ export default function DriversPage() {
       <DriverModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchDrivers}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["drivers"] })}
         driver={selectedDriver}
       />
     </div>

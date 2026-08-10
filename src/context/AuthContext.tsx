@@ -9,6 +9,7 @@ interface User {
   role: string;
   company_id: string;
   name?: string;
+  profile_pic_url?: string;
   must_change_password?: boolean;
 }
 

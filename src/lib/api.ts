@@ -75,3 +75,61 @@ export const api = {
   patch: <T = any>(endpoint: string, body: any, options?: RequestInit) => request<T>(endpoint, { ...options, method: 'PATCH', body: JSON.stringify(body) }),
   delete: <T = any>(endpoint: string, options?: RequestInit) => request<T>(endpoint, { ...options, method: 'DELETE' }),
 };
+
+export async function uploadFile(file: File): Promise<{ url: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}/upload`, {
+    method: 'POST',
+    body: formData,
+    credentials: 'include',
+  });
+
+  if (response.status === 401) {
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      const isAuthRoute = currentPath === '/' ||
+        currentPath === '' ||
+        currentPath === '/index' ||
+        currentPath === '/index.html' ||
+        currentPath.startsWith('/login') ||
+        currentPath.startsWith('/signup') ||
+        currentPath.startsWith('/forgot-password') ||
+        currentPath.startsWith('/reset-password');
+
+      if (!isAuthRoute) {
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
+    }
+  }
+
+  let data;
+  try {
+    data = await response.json();
+  } catch (e) {
+    data = null;
+  }
+
+  if (!response.ok) {
+    let errorMessage = 'Failed to upload file';
+    if (typeof data?.detail === 'string') {
+      errorMessage = data.detail;
+    } else if (data?.message) {
+      errorMessage = data.message;
+    }
+    throw new ApiError(response.status, errorMessage, data);
+  }
+
+  return data?.data !== undefined ? data.data : data;
+}
+
+export function getImageUrl(path?: string | null): string | undefined {
+  if (!path) return undefined;
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+    return path;
+  }
+  const host = API_BASE_URL ? API_BASE_URL.replace(/\/api\/v1\/?$/, '') : '';
+  return `${host}${path.startsWith('/') ? '' : '/'}${path}`;
+}

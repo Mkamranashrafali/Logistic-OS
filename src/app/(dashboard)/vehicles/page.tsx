@@ -19,30 +19,26 @@ import { api } from "@/lib/api";
 import { VehicleModal } from "@/components/dashboard/vehicle-modal";
 import { EmptyState } from "@/components/ui/empty-state";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 export default function VehiclesPage() {
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data: vehiclesData, isPending } = useQuery({
+    queryKey: ["vehicles"],
+    queryFn: async () => {
+      const res = await api.get('/vehicles');
+      return res || [];
+    },
+  });
+
+  const vehicles = vehiclesData || [];
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-
-  useEffect(() => {
-    fetchVehicles();
-  }, []);
-
-  const fetchVehicles = async () => {
-    try {
-      setIsLoading(true);
-      const data = await api.get('/vehicles');
-      setVehicles(data || []);
-    } catch (err) {
-      console.error("Failed to fetch vehicles", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAdd = () => {
     setSelectedVehicle(null);
@@ -58,14 +54,14 @@ export default function VehiclesPage() {
     if (!confirm("Are you sure you want to disable/delete this vehicle?")) return;
     try {
       await api.delete(`/vehicles/${id}`);
-      fetchVehicles();
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
     } catch (err) {
       console.error("Failed to delete vehicle", err);
       alert("Failed to delete vehicle");
     }
   };
 
-  const filteredVehicles = vehicles.filter((vehicle) => {
+  const filteredVehicles = vehicles.filter((vehicle: any) => {
     const searchStr = `${vehicle.plate_number || ""} ${vehicle.make || ""} ${vehicle.model || ""}`.toLowerCase();
     const matchesSearch = searchTerm === "" || searchStr.includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || vehicle.availability_status === statusFilter;
@@ -120,7 +116,7 @@ export default function VehiclesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {(isPending && !vehiclesData) ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-32 text-center">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
@@ -138,7 +134,7 @@ export default function VehiclesPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredVehicles.map((vehicle) => (
+              filteredVehicles.map((vehicle: any) => (
                 <TableRow key={vehicle.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell>
                     <div className="px-2 py-1 bg-secondary rounded-md text-sm font-mono inline-block border">
@@ -181,7 +177,7 @@ export default function VehiclesPage() {
       <VehicleModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchVehicles}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["vehicles"] })}
         vehicle={selectedVehicle}
       />
     </div>

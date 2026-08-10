@@ -7,25 +7,18 @@ import { api } from "@/lib/api";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+import { useQuery } from "@tanstack/react-query";
+
 export default function ArchivedDriversPage() {
-  const [archivedDrivers, setArchivedDrivers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: archivedDriversData, isPending } = useQuery({
+    queryKey: ["drivers", "archived"],
+    queryFn: async () => {
+      const res = await api.get('/drivers?lifecycle_status=archived');
+      return res || [];
+    },
+  });
 
-  useEffect(() => {
-    fetchArchivedDrivers();
-  }, []);
-
-  const fetchArchivedDrivers = async () => {
-    try {
-      setIsLoading(true);
-      const data = await api.get('/drivers?lifecycle_status=archived');
-      setArchivedDrivers(data || []);
-    } catch (err) {
-      console.error("Failed to fetch archived drivers", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const archivedDrivers = archivedDriversData || [];
 
   return (
     <div className="space-y-6 animate-in fade-in-50">
@@ -41,7 +34,7 @@ export default function ArchivedDriversPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {(isPending && !archivedDriversData) ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -63,7 +56,7 @@ export default function ArchivedDriversPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {archivedDrivers.map((driver) => (
+                {archivedDrivers.map((driver: any) => (
                   <tr key={driver.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4 font-medium">{driver.name}</td>
                     <td className="px-6 py-4 text-muted-foreground">{driver.email || 'N/A'}</td>

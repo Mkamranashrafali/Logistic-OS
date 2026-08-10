@@ -12,27 +12,23 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { AssignmentModal } from "@/components/planning/assignment-modal";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 export default function PlanningQueuePage() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data: ordersData, isPending } = useQuery({
+    queryKey: ["planning"],
+    queryFn: async () => {
+      const res = await api.get("/planning/orders");
+      return res || [];
+    },
+  });
+
+  const orders = ordersData || [];
+
   const [assignOrderId, setAssignOrderId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
-    setIsLoading(true);
-    try {
-      const data = await api.get("/planning/orders");
-      setOrders(data || []);
-    } catch (error) {
-      console.error("Failed to load planning orders", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAssignClick = (orderId: string) => {
     setAssignOrderId(orderId);
@@ -40,8 +36,11 @@ export default function PlanningQueuePage() {
   };
 
   const handleAssigned = () => {
-    // Refresh list
-    fetchOrders();
+    queryClient.invalidateQueries({ queryKey: ["planning"] });
+    queryClient.invalidateQueries({ queryKey: ["orders"] });
+    queryClient.invalidateQueries({ queryKey: ["trips"] });
+    queryClient.invalidateQueries({ queryKey: ["drivers"] });
+    queryClient.invalidateQueries({ queryKey: ["vehicles"] });
   };
 
   return (
@@ -62,7 +61,7 @@ export default function PlanningQueuePage() {
           <CardDescription>Select an order to find an available driver and vehicle pair.</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {(isPending && !ordersData) ? (
             <div className="flex justify-center items-center py-10">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
@@ -85,7 +84,7 @@ export default function PlanningQueuePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((order) => (
+                  {orders.map((order: any) => (
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">
                         {order.id.slice(0, 8).toUpperCase()}

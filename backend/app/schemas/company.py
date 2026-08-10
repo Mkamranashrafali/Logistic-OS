@@ -19,6 +19,7 @@ class CompanyUpdate(BaseModel):
     address: Optional[str] = None
     contact_email: Optional[str] = None
     phone: Optional[str] = None
+    logo_url: Optional[str] = None
 
 class CompanyResponse(CompanyBase):
     id: str

@@ -15,6 +15,8 @@ import {
 import Link from "next/link";
 
 import { useRouter } from "next/navigation";
+import { getImageUrl } from "@/lib/api";
+import { useState, useEffect } from "react";
 
 function getInitials(name?: string, email?: string): string {
   if (!name && !email) return "?";
@@ -34,6 +36,13 @@ function capitalizeFirstLetter(string: string) {
 export function TopNav() {
   const { user, isLoading, logout } = useAuth();
   const router = useRouter();
+
+  const [avatarError, setAvatarError] = useState(false);
+  const avatarSrc = avatarError ? undefined : getImageUrl(user?.profile_pic_url);
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [user?.profile_pic_url]);
 
   return (
     <header className="flex h-16 w-full items-center justify-between border-b bg-background px-6">
@@ -64,11 +73,20 @@ export function TopNav() {
                   {capitalizeFirstLetter(user.role)}
                 </span>
               </div>
-              <Avatar className="h-10 w-10 border-2 border-primary/10 shadow-sm">
-                <AvatarImage src="" alt={user.name || user.email} />
-                <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-sm">
-                  {getInitials(user.name, user.email)}
-                </AvatarFallback>
+              <Avatar className="h-10 w-10 border-2 border-primary/10 shadow-sm overflow-hidden flex items-center justify-center bg-primary/5">
+                {avatarSrc ? (
+                  <img
+                    src={avatarSrc}
+                    key={avatarSrc}
+                    alt={user.name || user.email}
+                    className="h-full w-full object-cover"
+                    onError={() => setAvatarError(true)}
+                  />
+                ) : (
+                  <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-sm">
+                    {getInitials(user.name, user.email)}
+                  </AvatarFallback>
+                )}
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end">
@@ -83,7 +101,7 @@ export function TopNav() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push(user.role === 'driver' ? "/driver/settings" : "/settings")} className="cursor-pointer flex w-full">
+              <DropdownMenuItem onClick={() => router.push(user.role === 'driver' ? "/driver/profile" : "/settings")} className="cursor-pointer flex w-full">
                 <UserIcon className="mr-2 h-4 w-4" />
                 <span>My Profile</span>
               </DropdownMenuItem>

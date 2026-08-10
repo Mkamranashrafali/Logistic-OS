@@ -10,8 +10,11 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
+import { useQueryClient } from "@tanstack/react-query";
+
 export default function CreateOrderPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
   const [customers, setCustomers] = useState<any[]>([]);
 
@@ -50,6 +53,8 @@ export default function CreateOrderPage() {
       };
 
       await api.post('/orders', orderPayload);
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["planning"] });
 
       // Navigate to planning queue
       router.push('/planning');

@@ -15,29 +15,25 @@ import { api } from "@/lib/api";
 import { CustomerModal } from "@/components/dashboard/customer-modal";
 import { EmptyState } from "@/components/ui/empty-state";
 
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data: customersData, isPending } = useQuery({
+    queryKey: ["customers"],
+    queryFn: async () => {
+      const res = await api.get('/customers');
+      return res || [];
+    },
+  });
+
+  const customers = customersData || [];
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  const fetchCustomers = async () => {
-    try {
-      setIsLoading(true);
-      const data = await api.get('/customers');
-      setCustomers(data || []);
-    } catch (err) {
-      console.error("Failed to fetch customers", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAdd = () => {
     setSelectedCustomer(null);
@@ -53,14 +49,14 @@ export default function CustomersPage() {
     if (!confirm("Are you sure you want to delete this customer?")) return;
     try {
       await api.delete(`/customers/${id}`);
-      fetchCustomers();
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
     } catch (err) {
       console.error("Failed to delete customer", err);
       alert("Failed to delete customer");
     }
   };
 
-  const filteredCustomers = customers.filter((customer) => {
+  const filteredCustomers = customers.filter((customer: any) => {
     const searchStr = `${customer.name || ""} ${customer.company_name || ""} ${customer.email || ""}`.toLowerCase();
     return searchTerm === "" || searchStr.includes(searchTerm.toLowerCase());
   });
@@ -98,7 +94,7 @@ export default function CustomersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {(isPending && !customersData) ? (
               <TableRow>
                 <TableCell colSpan={4} className="h-32 text-center">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
@@ -116,7 +112,7 @@ export default function CustomersPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredCustomers.map((customer) => (
+              filteredCustomers.map((customer: any) => (
                 <TableRow key={customer.id} className="hover:bg-muted/50 transition-colors">
                   <TableCell>
                     <div className="flex flex-col">
@@ -166,7 +162,7 @@ export default function CustomersPage() {
       <CustomerModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchCustomers}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ["customers"] })}
         customer={selectedCustomer}
       />
     </div>

@@ -31,8 +31,8 @@ def update_my_company(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Any:
-    if current_user.role != "owner":
-        raise HTTPException(status_code=403, detail="Only owners can update company details")
+    if current_user.role not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Only owners and admins can update company details")
         
     company = db.query(Company).filter(Company.id == current_user.company_id).first()
     if not company:

@@ -32,7 +32,9 @@ class ExpenseEntryRequest(BaseModel):
     receipt_url: str = None
 
 class ProfileUpdateRequest(BaseModel):
+    name: str = None
     phone: str = None
+    profile_pic_url: str = None
     emergency_contact: str = None
 
 def get_current_driver(db: Session, current_user: User) -> Driver:
@@ -54,15 +56,28 @@ def get_profile(
     if driver.current_trip_id:
         assigned_vehicle = db.query(Vehicle).filter(Vehicle.current_trip_id == driver.current_trip_id).first()
         
+    vehicle_data = None
+    if assigned_vehicle:
+        vehicle_name = f"{assigned_vehicle.make or ''} {assigned_vehicle.model or ''}".strip() or "Assigned Vehicle"
+        vehicle_data = {
+            "id": assigned_vehicle.id,
+            "name": vehicle_name,
+            "license_plate": assigned_vehicle.plate_number,
+            "make": assigned_vehicle.make,
+            "model": assigned_vehicle.model,
+            "plate_number": assigned_vehicle.plate_number
+        }
+
     return success_response(message="Profile fetched", data={
         "id": driver.id,
         "name": driver.name,
         "email": driver.email,
         "phone": driver.phone,
         "license_number": driver.license_number,
+        "profile_pic_url": driver.profile_pic_url,
         "availability_status": driver.availability_status,
         "company": {"id": company.id, "name": company.name} if company else None,
-        "assigned_vehicle": {"id": assigned_vehicle.id, "name": assigned_vehicle.name, "license_plate": assigned_vehicle.license_plate} if assigned_vehicle else None
+        "assigned_vehicle": vehicle_data
     })
 
 @router.get("/expenses", summary="Get driver expenses")
@@ -256,12 +271,21 @@ def update_profile(
     current_user: User = Depends(require_roles(["driver"]))
 ) -> Any:
     driver = get_current_driver(db, current_user)
+    if payload.name:
+        driver.name = payload.name
     if payload.phone:
         driver.phone = payload.phone
-    if payload.emergency_contact:
-        # Assuming we can just append it to notes for now as we don't have emergency_contact column
-        driver.name = driver.name # No-op for emergency_contact unless we add the column, which I'll omit for brevity or just add to DB via another alembic run. Let's just update phone.
+    if payload.profile_pic_url is not None:
+        driver.profile_pic_url = payload.profile_pic_url
         
     db.commit()
     db.refresh(driver)
-    return success_response(message="Profile updated successfully")
+    return success_response(
+        message="Profile updated successfully", 
+        data={
+            "id": driver.id,
+            "name": driver.name,
+            "phone": driver.phone,
+            "profile_pic_url": driver.profile_pic_url
+        }
+    )
