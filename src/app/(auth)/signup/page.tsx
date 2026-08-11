@@ -22,6 +22,26 @@ export default function SignupPage() {
   const [resendStatus, setResendStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleGoogleSuccess = useCallback(async (credentialResponse: any) => {
+    if (!credentialResponse.credential) return;
+    try {
+      setIsLoading(true);
+      const response = await api.post('/auth/google', { 
+        credential: credentialResponse.credential,
+        is_signup: true
+      });
+      login(response.user);
+    } catch (err: any) {
+      setError(err.message || "Google Signup failed");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [login]);
+
+  const handleGoogleError = useCallback(() => {
+    setError("Google Signup failed");
+  }, []);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -199,24 +219,8 @@ export default function SignupPage() {
         <div className="flex justify-center w-full">
           <GoogleAuthButton
             isLoading={isLoading}
-            onSuccess={useCallback(async (credentialResponse: any) => {
-              if (!credentialResponse.credential) return;
-              try {
-                setIsLoading(true);
-                const response = await api.post('/auth/google', { 
-                  credential: credentialResponse.credential,
-                  is_signup: true
-                });
-                login(response.user);
-              } catch (err: any) {
-                setError(err.message || "Google Signup failed");
-              } finally {
-                setIsLoading(false);
-              }
-            }, [login])}
-            onError={useCallback(() => {
-              setError("Google Signup failed");
-            }, [])}
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
             text="signup_with"
           />
         </div>

@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
+import asyncio
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -23,10 +25,21 @@ socket.getaddrinfo = new_getaddrinfo
 # But keeping it for immediate local sqlite testing if alembic isn't run.
 # Base.metadata.create_all(bind=engine)
 
+from app.tasks.cleanup import run_cleanup_task
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    cleanup_task = asyncio.create_task(run_cleanup_task(interval_minutes=15))
+    yield
+    # Shutdown
+    cleanup_task.cancel()
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    lifespan=lifespan
 )
 
 # Set up CORS
